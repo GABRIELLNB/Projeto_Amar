@@ -19,8 +19,8 @@ from django.urls import path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('Login/', admin.site.urls),
-    path('Cadastro/', admin.site.urls),
+    path('Login/',views.login, name= 'login'),
+    path('cadastro/',views.cadastro, name='cadastro'),
     path('Menu/', admin.site.urls),
     path('Editar_Perfil/', admin.site.urls),
     path('Bate_papo/', admin.site.urls),
