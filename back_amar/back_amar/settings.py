@@ -76,10 +76,15 @@ WSGI_APPLICATION = 'back_amar.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': '127.0.0.2',
+        'NAME': 'testes',
+        'USER': 'root',
+        'PASSWORD': '0609',
+        'HOST': 'localhost',
+        'PORT': '3306',
     }
 }
+
 
 
 # Password validation

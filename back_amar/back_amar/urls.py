@@ -19,4 +19,18 @@ from django.urls import path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('Login/', admin.site.urls),
+    path('Cadastro/', admin.site.urls),
+    path('Menu/', admin.site.urls),
+    path('Editar_Perfil/', admin.site.urls),
+    path('Bate_papo/', admin.site.urls),
+    path('Agendamento/', admin.site.urls),
+    path('Historico/', admin.site.urls),
+    path('Configuracoes/', admin.site.urls),
+    #path('Consultas/', admin.site.urls),
+    #path('Permissões/', admin.site.urls),
+    #path('Entenda_Mais/', admin.site.urls),
+    #path('Termos_e_politicas/', admin.site.urls),
+    #path('Permissoes/', admin.site.urls),
+    #path('Sair_da_conta/', admin.site.urls),
 ]
