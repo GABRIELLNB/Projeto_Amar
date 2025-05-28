@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/button'
 import { IconButton } from '@/components/icon-button'
+import ProfsidebarMenu from '@/components/prof-sidebar-menu'
 import SidebarMenu from '@/components/sidebar-menu'
 import { ArrowLeft, CircleX, FileClock } from 'lucide-react'
 import { useState } from 'react'
@@ -51,7 +52,7 @@ export default function Histórico() {
 
   return (
     <>
-      <SidebarMenu userName="Paulo Avelino" />
+      <ProfsidebarMenu userName="Paulo Avelino" />
 
       <div className="ml-[360px] p-6 relative">
         <div className="gap-6 mt-15 px-6">

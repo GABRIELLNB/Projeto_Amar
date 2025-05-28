@@ -9,6 +9,7 @@ import {
   Eye,
   EyeOff,
   FileText,
+  Fingerprint,
   Lock,
   Mail,
   Phone,
@@ -77,7 +78,7 @@ export default function EditarPerfil() {
                   </label>
                   <InputRoot className="group bg-pink1000 h-10 border border-pink2000 rounded-sm px-4 flex items-center gap-2 focus-within:border-pink4000 data-[error=true]:border-red-700">
                     <InputIcon>
-                      <FileText />
+                      <Fingerprint />
                     </InputIcon>
                     <InputField
                       id="cpf"

@@ -5,7 +5,7 @@ import { IconButton } from '@/components/icon-button'
 import { InputField, InputIcon, InputRoot } from '@/components/input'
 import { MaskedInputField } from '@/components/mask'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, FileText, Lock, Mail, Phone, User } from 'lucide-react'
+import { ArrowLeft, FileText, Fingerprint, Lock, Mail, Phone, User } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
@@ -76,7 +76,7 @@ export default function Cadastro() {
             {/* CPF */}
             <InputRoot error={!!errors.cpf}>
               <InputIcon>
-                <FileText />
+                <Fingerprint />
               </InputIcon>
               <MaskedInputField
                 mask="000.000.000-00"

@@ -19,7 +19,7 @@ interface SidebarMenuProps {
   userName: string
 }
 
-export default function SidebarMenu({ userName }: SidebarMenuProps) {
+export default function ProfsidebarMenu({ userName }: SidebarMenuProps) {
   const [activeItem, setActiveItem] = useState<string>('Menu')
   const sidebarRef = useRef<HTMLDivElement>(null)
   const isResizing = useRef(false)
@@ -81,6 +81,7 @@ export default function SidebarMenu({ userName }: SidebarMenuProps) {
           { icon: <CalendarPlus />, label: 'Agendar' },
           { icon: <FileClock />, label: 'Histórico' },
           { icon: <Settings />, label: 'Configurações' },
+          { icon: <CalendarCheck2 />, label: 'Consultas Marcadas' },
         ].map((item, index) => (
           <div key={index} className="flex justify-center mb-2">
             <Button
