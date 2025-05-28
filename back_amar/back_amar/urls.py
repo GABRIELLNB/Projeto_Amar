@@ -1,3 +1,6 @@
+from django.contrib import admin
+from django.urls import path
+from . import views  # Importa o módulo views completo
 """
 URL configuration for back_amar project.
 
@@ -21,7 +24,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('Login/',views.login, name= 'login'),
     path('cadastro/',views.cadastro, name='cadastro'),
-    path('Menu/', admin.site.urls),
+    path('api/menu/', menu, name='menu_data'),
     path('Editar_Perfil/', admin.site.urls),
     path('Bate_papo/', admin.site.urls),
     path('Agendamento/', admin.site.urls),

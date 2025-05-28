@@ -1,14 +1,24 @@
 from django.db import models
+class Adimitidos(models.Model):
+    cpf = models.CharField(max_length=11, unique=True)
+    matricula = models.CharField(max_length=10, blank=True, null=True) 
 
 class User(models.Model):
-    cpf = models.CharField(max_length=11, unique=True)
+    user = models.OneToOneField(Adimitidos, on_delete=models.CASCADE)
     nome = models.CharField(max_length=30)
     email = models.EmailField(max_length=30, unique=True)
     telefone = models.CharField(max_length=11)
     senha = models.CharField(max_length=128)  # senha criptografada
 
     def __str__(self):
-        return f'{self.nome} ({self.cpf})'
+        return f'{self.nome} ({self.user.cpf})'
+
+
+class Forums(models.Model):
+    user = models.OneToOneField(Adimitidos, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f'{self.nome} ({self.user.cpf})'
 
 
 class Estagiario(models.Model):
