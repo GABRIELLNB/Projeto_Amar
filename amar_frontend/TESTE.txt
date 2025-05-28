@@ -1,0 +1,10 @@
+
+export default function Home() {
+  return (
+    <main className="min-h-screen w-full flex items-center justify-center max-w-[1240px] max-auto px-5 py-8 md:py-0">
+      ADIDAS
+    </main>
+  )
+}
+
+npm install react-input-mask@next

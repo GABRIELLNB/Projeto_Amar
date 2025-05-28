@@ -1,0 +1,190 @@
+'use client'
+
+import { Button } from '@/components/button'
+import { IconButton } from '@/components/icon-button'
+import { InputField, InputIcon, InputRoot } from '@/components/input'
+import { MaskedInputField } from '@/components/mask'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { ArrowLeft, FileText, Lock, Mail, Phone, User } from 'lucide-react'
+import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import { useForm } from 'react-hook-form'
+import InputMask from 'react-input-mask'
+import { z } from 'zod'
+
+const cadastroSchema = z
+  .object({
+    nome: z.string().min(2, 'Digite seu nome completo'),
+    cpf: z.string().min(14, 'CPF inválido'), // 000.000.000-00
+    email: z.string().email('Digite um e-mail válido'),
+    telefone: z.string().min(14, 'Telefone inválido'), // (00) 00000-0000
+    senha: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
+    confirmarSenha: z.string(),
+  })
+  .refine(data => data.senha === data.confirmarSenha, {
+    message: 'As senhas não coincidem',
+    path: ['confirmarSenha'],
+  })
+
+type CadastroSchema = z.infer<typeof cadastroSchema>
+
+export default function Cadastro() {
+  const router = useRouter()
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<CadastroSchema>({
+    resolver: zodResolver(cadastroSchema),
+  })
+
+  function onSubmit(data: CadastroSchema) {
+    console.log(data)
+  }
+
+  return (
+    <div className="min-h-dvh w-full flex items-center justify-center gap-16 flex-col md:flex-row">
+      <div className="relative bg-pink1000 p-8 rounded-xl shadow-lg w-full max-w-md min-h-[400px]">
+        <div className="absolute top-4 left-4">
+          <IconButton onClick={() => router.push('/')}>
+            <ArrowLeft />
+          </IconButton>
+        </div>
+
+        <div className="flex justify-center items-center mb-6 mt-6">
+          <h1 className="text-xl font-bold text-blue1000">Crie sua Conta</h1>
+        </div>
+
+        <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+          <div className="space-y-4 mb-0">
+            {/* Nome */}
+            <InputRoot error={!!errors.nome}>
+              <InputIcon>
+                <User />
+              </InputIcon>
+              <InputField
+                type="text"
+                placeholder="Seu nome"
+                {...register('nome')}
+              />
+            </InputRoot>
+            {errors.nome && (
+              <p className="mt-1 text-red text-xs">{errors.nome.message}</p>
+            )}
+
+            {/* CPF */}
+            <InputRoot error={!!errors.cpf}>
+              <InputIcon>
+                <FileText />
+              </InputIcon>
+              <MaskedInputField
+                mask="000.000.000-00"
+                placeholder="CPF"
+                {...register('cpf')}
+              />
+            </InputRoot>
+            {errors.cpf && (
+              <p className="mt-1 text-red text-xs">{errors.cpf.message}</p>
+            )}
+
+            {/* Email */}
+            <InputRoot error={!!errors.email}>
+              <InputIcon>
+                <Mail />
+              </InputIcon>
+              <InputField
+                type="email"
+                placeholder="E-mail"
+                {...register('email')}
+              />
+            </InputRoot>
+            {errors.email && (
+              <p className="mt-1 text-red text-xs">{errors.email.message}</p>
+            )}
+
+            {/* Telefone */}
+            <InputRoot error={!!errors.telefone}>
+              <InputIcon>
+                <Phone />
+              </InputIcon>
+              <MaskedInputField
+                mask="(00) 00000-0000"
+                placeholder="Telefone"
+                {...register('telefone')}
+              />
+            </InputRoot>
+            {errors.telefone && (
+              <p className="mt-1 text-red text-xs">{errors.telefone.message}</p>
+            )}
+
+            {/* Senha */}
+            <InputRoot error={!!errors.senha}>
+              <InputIcon>
+                <Lock />
+              </InputIcon>
+              <InputField
+                type="password"
+                placeholder="Senha"
+                {...register('senha')}
+              />
+            </InputRoot>
+            {errors.senha && (
+              <p className="mt-1 text-red text-xs">{errors.senha.message}</p>
+            )}
+
+            {/* Confirmar Senha */}
+            <InputRoot error={!!errors.confirmarSenha}>
+              <InputIcon>
+                <Lock />
+              </InputIcon>
+              <InputField
+                type="password"
+                placeholder="Confirme sua senha"
+                {...register('confirmarSenha')}
+              />
+            </InputRoot>
+            {errors.confirmarSenha && (
+              <p className="mt-1 text-red text-sm">
+                {errors.confirmarSenha.message}
+              </p>
+            )}
+          </div>
+
+          <br />
+
+          <Button type="submit">
+            <span className="mx-auto">Confirmar</span>
+          </Button>
+
+          <div className="mt-[8px] text-sm text-[13px]">
+            <Button
+              type="button"
+              onClick={() => router.push('/')}
+              className="font-bold text-blue1000 text-sm hover:underline transition-colors duration-300 cursor-pointer text-[14px]"
+            >
+              Já tem uma conta?
+            </Button>
+          </div>
+        </form>
+      </div>
+      <div className="absolute top-4 left-4 flex items-center gap-2">
+        <Image
+          src="/teste3.png"
+          alt="Logo da AMAR"
+          width={50}
+          height={50}
+          priority
+        />
+        <div className="flex flex-col leading-tight">
+          <h1 className="text-[20px] font-bold text-blue1000 ml-[-5]">
+            A.M.A.R
+          </h1>
+          <span className="text-sm text-pink4000 ml-[-5]">
+            Apoio, Motivação, Acolhimento e Respeito
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}

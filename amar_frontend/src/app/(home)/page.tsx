@@ -1,0 +1,125 @@
+'use client'
+
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useRouter } from 'next/navigation'
+import Image from 'next/image'
+import { Mail, Lock } from 'lucide-react'
+import { Button } from '@/components/button'
+import { InputField, InputIcon, InputRoot } from '@/components/input'
+
+// Schema de validação com Zod
+const loginSchema = z.object({
+  email: z.string().email('Digite um e-mail válido'),
+  senha: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
+})
+
+type LoginSchema = z.infer<typeof loginSchema>
+
+export default function Home() {
+  const router = useRouter()
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginSchema>({
+    resolver: zodResolver(loginSchema),
+  })
+
+  function onLogin(data: LoginSchema) {
+    console.log('Dados do login:', data)
+  }
+
+  return (
+    <div className="min-h-dvh w-full flex items-center justify-center gap-16 flex-col md:flex-row">
+      <div className="bg-pink1000 p-8 rounded-xl shadow-lg w-full max-w-md min-h-[400px]">
+        <div className="flex items-start text-left gap-1 ml-1 mb-6">
+          <Image
+            src="/teste3.png"
+            alt="Logo da AMAR"
+            width={130}
+            height={130}
+            priority
+          />
+          <div className="flex flex-col leading-tight">
+            <h1 className="text-4xl font-bold text-blue1000">
+              <br />
+              A.M.A.R
+            </h1>
+            <span className="text-sm text-blue1000">
+              Apoio, Motivação, Acolhimento e Respeito
+            </span>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit(onLogin)} className="space-y-4">
+          <div className="space-y-4 mb-0">
+            {/* Email */}
+            <div className="space-y-1">
+              <InputRoot error={!!errors.email}>
+                <InputIcon>
+                  <Mail />
+                </InputIcon>
+                <InputField
+                  type="email"
+                  placeholder="E-mail"
+                  {...register('email')}
+                />
+              </InputRoot>
+              {errors.email && (
+                <p className="text-red text-xs">
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
+
+            {/* Senha */}
+            <div className="space-y-1">
+              <InputRoot error={!!errors.senha}>
+                <InputIcon>
+                  <Lock />
+                </InputIcon>
+                <InputField
+                  type="password"
+                  placeholder="Senha"
+                  {...register('senha')}
+                />
+              </InputRoot>
+              {errors.senha && (
+                <p className="text-red text-xs">
+                  {errors.senha.message}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            className="relative text-blue1000 text-sm font-medium hover:underline underline-offset-4 decoration-blue-400/50 hover:decoration-blue1000 transition-colors duration-300 cursor-pointer text-[12px]"
+          >
+            Esqueceu sua senha?
+          </Button>
+
+          <br />
+
+          <Button type="submit">
+            <span className="mx-auto">Entrar</span>
+          </Button>
+
+          <div className="mt-[-10px] text-sm text-[13px]">
+            <span className="text-pink2000">Precisando de uma conta?</span>
+            <Button
+              type="button"
+              onClick={() => router.push('/cadastro')}
+              className="ml-1 text-blue1000 text-sm hover:underline transition-colors duration-300 cursor-pointer text-[13px]"
+            >
+              Registre-se
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
