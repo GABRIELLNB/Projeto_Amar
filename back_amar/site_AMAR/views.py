@@ -1,6 +1,9 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from .models import Usuario, Estagiario, Profissional
+from .utils import get_tipo_usuario # Para reutilizar 
 from .serializers import UsuarioSerializer, LoginSerializer
 from .models import Usuario
 from django.contrib.auth.hashers import check_password
@@ -43,3 +46,35 @@ class LoginView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class MenuView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        usuario = request.user
+
+        tipo = get_tipo_usuario(usuario)
+
+        data = {
+                    'nome': usuario.nome,
+                    'email': usuario.email,
+                    'tipo_usuario': tipo,
+                    'opcoes_menu': [
+                        'Editar perfil',
+                        'Bate-Papo',
+                        'Agendar',
+                        'Histórico',
+                        'Configurações',
+                    ],
+                    'extras': {
+                        'forum_mais_valiados': [
+                            # Exemplo fictício
+                            {'titulo': 'Ansiedade', 'autor': 'Prof. Joana'},
+                            {'titulo': 'Como melhorar o sono?', 'autor': 'Est. Lucas'}
+                        ],
+                        'propagandas': [
+                            {'imagem': '/media/banner1.jpg', 'link': '/promo1'},
+                            {'imagem': '/media/banner2.jpg', 'link': '/promo2'}
+                        ]
+                    }
+                }
+        return Response(data, status=status.HTTP_200_OK)
