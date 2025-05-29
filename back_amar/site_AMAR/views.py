@@ -2,11 +2,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from .models import Usuario, Estagiario, Profissional
-from .utils import get_tipo_usuario # Para reutilizar 
-from .serializers import UsuarioSerializer, LoginSerializer
 from .models import Usuario
+from .serializers import UsuarioSerializer, LoginSerializer
+from django.contrib.auth.hashers import make_password
+from .models import Usuario, Estagiario, Profissional, Forums
+from .utils import get_tipo_usuario # Para reutilizar 
 from django.contrib.auth.hashers import check_password
+from .serializers import ForumSerializer
 import re
 
 def normalizar_cpf(cpf):
@@ -51,30 +53,59 @@ class MenuView(APIView):
 
     def get(self, request):
         usuario = request.user
-
         tipo = get_tipo_usuario(usuario)
 
+        #VIEWS QUE RETORNA OS FÓRUNS MAIS CURTIDOS
+        foruns = Forums.objects.order_by('-like')[:10]# top 10 mais curtidos
+        serializer = ForumSerializer(foruns, maniy=True)
+
         data = {
-                    'nome': usuario.nome,
-                    'email': usuario.email,
-                    'tipo_usuario': tipo,
-                    'opcoes_menu': [
-                        'Editar perfil',
-                        'Bate-Papo',
-                        'Agendar',
-                        'Histórico',
-                        'Configurações',
-                    ],
-                    'extras': {
-                        'forum_mais_valiados': [
-                            # Exemplo fictício
-                            {'titulo': 'Ansiedade', 'autor': 'Prof. Joana'},
-                            {'titulo': 'Como melhorar o sono?', 'autor': 'Est. Lucas'}
-                        ],
-                        'propagandas': [
-                            {'imagem': '/media/banner1.jpg', 'link': '/promo1'},
-                            {'imagem': '/media/banner2.jpg', 'link': '/promo2'}
-                        ]
-                    }
-                }
+            'nome': usuario.nome,
+            'email': usuario.email,
+            'tipo_usuario': tipo,
+            'opcoes_menu': [
+                'Editar perfil',
+                'Bate-Papo',
+                'Agendar',
+                'Histórico',
+                'Configurações',
+            ],
+            'extras': {
+                'forum_mais_valiados': serializer.data,  # agora vem do banco!
+                'propagandas': [
+                    {'imagem': '/media/banner1.jpg', 'link': '/promo1'},
+                    {'imagem': '/media/banner2.jpg', 'link': '/promo2'}
+                ]
+            }
+        }
+
         return Response(data, status=status.HTTP_200_OK)
+
+   
+class EditarPerfilView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        usuario = request.user
+        data = request.data.copy() #salva um copia dos dados
+
+        if 'senha' in data and data['senha']:
+            data['senha'] = make_password(data['senha'])
+
+        serializer = UsuarioSerializer(usuario, data=data, partial = True)
+        if serializer.is_valid():
+             serializer.save()
+             return Response({'detail': 'Perfil atualizado com sucesso!'}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class ForumDetaiView(APIView):
+    def get(self, request, forum_id):
+        try:
+            forum = Forums.objects.get(id=forum_id)
+        except Forums.DoesNotExist:
+            return Response({'detail': 'Fórum não encontrado'}, status=404)
+        
+        serialzier = ForumSerializer(forum)
+        return Response(serialzier.data)
+    
