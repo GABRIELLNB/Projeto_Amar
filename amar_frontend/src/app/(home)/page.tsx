@@ -34,7 +34,7 @@ async function onLogin(data: LoginSchema) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        username: data.email,  // aqui depende do backend; pode ser email ou username
+        email: data.email,  // aqui depende do backend; pode ser email ou username
         password: data.senha,
       }),
     })
@@ -52,7 +52,7 @@ async function onLogin(data: LoginSchema) {
     localStorage.setItem('token', json.access)
 
     // Redirecione para a página protegida
-    router.push('/dashboard')
+    router.push('/menu')
   } catch (error) {
     console.error('Falha no login:', error)
     alert('Usuário ou senha inválidos')

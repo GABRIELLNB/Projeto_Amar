@@ -5,7 +5,7 @@ import { BotaoGostei } from '@/components/gostei'
 import SidebarMenu from '@/components/sidebar-menu'
 import { MessageSquare } from 'lucide-react'
 
-export default function EditarPerfil() {
+export default function Menu() {
   return (
     <div>
       <SidebarMenu userName="Paulo Avelino" />

@@ -12,6 +12,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         senha = validated_data.pop('senha')
         usuario = Usuario(**validated_data)
-        usuario.senha = senha  # usa o setter para hash
+        usuario.set_password(senha)  # seta e faz o hash da senha
         usuario.save()
         return usuario
+
