@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Usuario
 from django.contrib.auth.hashers import make_password
 
+
 class UsuarioSerializer(serializers.ModelSerializer):
     senha = serializers.CharField(write_only=True)
 
@@ -12,7 +13,11 @@ class UsuarioSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         senha = validated_data.pop('senha')
         usuario = Usuario(**validated_data)
-        usuario.set_password(senha)  # seta e faz o hash da senha
+        usuario.senha = senha  # usa o setter para hash
         usuario.save()
         return usuario
+    
 
+class LoginSerializer(serializers.Serializer):
+    cpf = serializers.CharField()
+    senha = serializers.CharField(write_only=True)

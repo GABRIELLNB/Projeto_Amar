@@ -26,4 +26,5 @@ TUTORIAL DAS PASTAS:
 
 "views" = É nela que se cria a lógica por trás do site, ou seja, é aqui que se define as funções/classes para que os usuários naveguem através dos links inseridos.
 
+"serializers" = converte dados complexos, como objetos ou estruturas de dados, em algum formato que pode ser facilmente transmitido ou armazenado e, posteriormente, reconstruído.
 
