@@ -1,72 +1,70 @@
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
-class Adimitidos(models.Model):
-    cpf = models.CharField(max_length=11, unique=True)
-    matricula = models.CharField(max_length=10, blank=True, null=True) 
+from django.utils import timezone
 
-class User(models.Model):
-    user = models.OneToOneField(Adimitidos, on_delete=models.CASCADE)
-    nome = models.CharField(max_length=30)
-    email = models.EmailField(max_length=30, unique=True)
-    telefone = models.CharField(max_length=11)
-    senha = models.CharField(max_length=128)  # senha criptografada
+class UsuarioManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError("O email é obrigatório")
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("is_active", True)
+
+        if not password:
+            raise ValueError("Superuser deve ter uma senha")
+
+        return self.create_user(email=email, password=password, **extra_fields)
+
+
+class Usuario(AbstractBaseUser, PermissionsMixin):
+    email = models.EmailField(unique=True)
+    nome = models.CharField(max_length=100)
+    cpf = models.CharField(max_length=14, unique=True)
+    telefone = models.CharField(max_length=20)
+
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+    date_joined = models.DateTimeField(default=timezone.now)
+   
+    
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
+
+    objects = UsuarioManager()
 
     def __str__(self):
-        return f'{self.nome} ({self.user.cpf})'
-
-
-class Forums(models.Model):
-    user = models.OneToOneField(Adimitidos, on_delete=models.CASCADE)
-
+        return self.email
+class Profissional(models.Model):
+    cpf = models.CharField(max_length=14, unique=True)
+    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, null=True, blank=True)
+    nome = models.CharField(max_length=100, blank=True)
+    def save(self, *args, **kwargs):
+        if self.usuario:
+            self.nome = self.usuario.nome
+        super().save(*args, **kwargs)
+        
     def __str__(self):
-        return f'{self.nome} ({self.user.cpf})'
-
+        if self.usuario:
+            return f"{self.usuario.nome} ({self.cpf})"
+        return f"(Sem usuário) {self.cpf}"
 
 class Estagiario(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    matricula = models.CharField(max_length=10)
-
+    cpf = models.CharField(max_length=14, unique=True)
+    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, null=True, blank=True)
+    nome = models.CharField(max_length=100, blank=True)
+    def save(self, *args, **kwargs):
+        if self.usuario:
+            self.nome = self.usuario.nome
+        super().save(*args, **kwargs)
+    
     def __str__(self):
-        return f'Estagiário {self.user.nome}'
-
-
-class Profissional(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    matricula = models.CharField(max_length=10)
-    tipo_servico = models.CharField(max_length=15)
-
-    def __str__(self):
-        return f'{self.tipo_servico} - {self.user.nome}'
-
-
-class Adm(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    senha = models.CharField(max_length=128)  # também deve usar criptografia
-
-    def __str__(self):
-        return f'Administrador {self.user.nome}'
-
-
-class Agendamento(models.Model):
-    STATUS_CHOICES = [
-        ('pendente', 'Pendente'),
-        ('concluido', 'Concluído'),
-        ('cancelado', 'Cancelado'),
-    ]
-
-    data_agendamento = models.DateField()
-    hora = models.TimeField()
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pendente')
-    tipo_servico_prof = models.ForeignKey(Profissional, on_delete=models.CASCADE)
-    paciente = models.ForeignKey(User, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f'{self.data_agendamento} {self.hora} - {self.paciente.nome}'
-
-
-def get_tipo_usuario(user):
-    if hasattr(user, 'profissional'):
-        return 'profissional'
-    elif hasattr(user, 'estagiario'):
-        return 'estagiario'
-    else:
-        return 'usuario'
+        if self.usuario:
+            return f"{self.usuario.nome} ({self.cpf})"
+        return f"(Sem usuário) {self.cpf}"

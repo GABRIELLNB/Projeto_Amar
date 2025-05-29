@@ -1,6 +1,7 @@
 from django.apps import AppConfig
 
-
 class SiteAmarConfig(AppConfig):
-    default_auto_field = 'django.db.models.BigAutoField'
     name = 'site_AMAR'
+
+    def ready(self):
+        import site_AMAR.signals

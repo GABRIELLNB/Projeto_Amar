@@ -28,9 +28,37 @@ export default function Home() {
     resolver: zodResolver(loginSchema),
   })
 
-  function onLogin(data: LoginSchema) {
-    console.log('Dados do login:', data)
+async function onLogin(data: LoginSchema) {
+  try {
+    const response = await fetch('http://localhost:8000/api/token/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: data.email,  // aqui depende do backend; pode ser email ou username
+        password: data.senha,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error('Erro no login')
+    }
+
+    const json = await response.json()
+    console.log('Login bem-sucedido', json)
+    // Exemplo de json:
+    // { access: 'jwt_access_token', refresh: 'jwt_refresh_token' }
+
+    // Salve o token (access) no localStorage/sessionStorage
+    localStorage.setItem('token', json.access)
+
+    // Redirecione para a página protegida
+    router.push('/dashboard')
+  } catch (error) {
+    console.error('Falha no login:', error)
+    alert('Usuário ou senha inválidos')
   }
+}
+
 
   return (
     <div className="min-h-dvh w-full flex items-center justify-center gap-16 flex-col md:flex-row">

@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowLeft, FileText, Fingerprint, Lock, Mail, Phone, User } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import InputMask from 'react-input-mask'
 import { z } from 'zod'
@@ -30,7 +31,8 @@ type CadastroSchema = z.infer<typeof cadastroSchema>
 
 export default function Cadastro() {
   const router = useRouter()
-
+  const [isLoading, setIsLoading] = useState(false)
+  
   const {
     register,
     handleSubmit,
@@ -39,9 +41,49 @@ export default function Cadastro() {
     resolver: zodResolver(cadastroSchema),
   })
 
-  function onSubmit(data: CadastroSchema) {
-    console.log(data)
+async function onSubmit(data: CadastroSchema) {
+  setIsLoading(true)
+  try {
+    const response = await fetch('http://127.0.0.1:8000/api/cadastro/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+
+    const text = await response.text() // pega o texto bruto da resposta
+
+    // biome-ignore lint/suspicious/noImplicitAnyLet: <explanation>
+    let result
+    try {
+      result = JSON.parse(text) // tenta converter para JSON
+    } catch {
+      result = text // se não for JSON, usa o texto puro
+    }
+
+    if (response.ok) {
+      alert('Usuário cadastrado com sucesso!')
+      router.push('/')
+    } else {
+      console.error('Erro da API:', result)
+
+      const errorMessage =
+        typeof result === 'object' && result !== null
+          ? JSON.stringify(result)
+          : String(result)
+
+      alert(`Erro ao cadastrar usuário: ${errorMessage}`)
+    }
+  } catch (error) {
+    console.error('Erro de rede ou inesperado:', error)
+    alert(
+      `Erro de conexão com o servidor ou inesperado: ${
+        error instanceof Error ? error.message : JSON.stringify(error)
+      }`
+    )
+  } finally {
+    setIsLoading(false)
   }
+}
 
   return (
     <div className="min-h-dvh w-full flex items-center justify-center gap-16 flex-col md:flex-row">
