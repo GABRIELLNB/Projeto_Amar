@@ -38,7 +38,7 @@ class PreCadastroFuncionarioView(APIView):
         nome = data.get('nome')
         matricula = data.get('matricula', '')
         telefone = data.get('telefone', '')
-        tipo_servico = data.get('tipo_serviço', '')  # Aqui cuidado para salvar em 'tipo_servico'
+        tipo_servico = data.get('tipo_servivo', '')  # Aqui cuidado para salvar em 'tipo_servico'
         dias = data.get('diasDisponiveis', [])
         horarios = data.get('horariosDisponiveis', [])
 
