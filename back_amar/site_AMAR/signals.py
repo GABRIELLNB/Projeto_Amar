@@ -17,6 +17,8 @@ def associar_usuario(sender, instance, created, **kwargs):
             prof.usuario = instance
             prof.nome = instance.nome  # atualiza o nome
             prof.save()
+            
+            
             print(f"Usuario {instance.nome} associado como Profissional.")
             return
         except Profissional.DoesNotExist:
@@ -27,6 +29,8 @@ def associar_usuario(sender, instance, created, **kwargs):
             est.usuario = instance
             est.nome = instance.nome  # atualiza o nome
             est.save()
+            
+            
             print(f"Usuario {instance.nome} associado como Estagiario.")
             return
         except Estagiario.DoesNotExist:

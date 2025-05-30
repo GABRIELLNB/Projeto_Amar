@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Usuario
+from .models import Estagiario, Profissional, Usuario
 from django.contrib.auth.hashers import make_password
 
 
@@ -17,8 +17,8 @@ class UsuarioSerializer(serializers.ModelSerializer):
         usuario.senha = senha  # usa o setter para hash
         usuario.save()
         return usuario
-    
 
+'''
 class LoginSerializer(serializers.Serializer):
     cpf = serializers.CharField()
     senha = serializers.CharField(write_only=True)
@@ -33,3 +33,5 @@ class ForumSerializer(serializers.ModelSerializer):
 
     def get_link(self, obj):
         return f"/forum{obj.id}/" #Url do front
+
+'''

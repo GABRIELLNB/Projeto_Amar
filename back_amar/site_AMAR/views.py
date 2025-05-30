@@ -3,12 +3,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from .models import Usuario
-from .serializers import UsuarioSerializer, LoginSerializer
+from .serializers import UsuarioSerializer
 from django.contrib.auth.hashers import make_password
-from .models import Usuario, Estagiario, Profissional, Forums
-from .utils import get_tipo_usuario # Para reutilizar 
-from django.contrib.auth.hashers import check_password
-from .serializers import ForumSerializer
+from .models import Usuario, Estagiario, Profissional
+
 import re
 
 def normalizar_cpf(cpf):
@@ -26,86 +24,66 @@ class CadastroView(APIView):
             return Response({"detail": "Usuário cadastrado com sucesso!"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class LoginView(APIView):
-    permission_classes =[AllowAny]
+from django.contrib.contenttypes.models import ContentType
+from django.utils.dateparse import parse_date
+from .models import Disponibilidade
+
+class PreCadastroFuncionarioView(APIView):
+    permission_classes = [AllowAny]
 
     def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        if serializer.is_valid():
-            email = serializer.validated_data['email']
-            cpf = normalizar_cpf(serializer.validated_data['cpf'])
-            senha = serializer.validated_data['senha']
+        data = request.data
+        tipo = data.get('tipo')
+        cpf = normalizar_cpf(data.get('cpf', ''))
+        nome = data.get('nome')
+        matricula = data.get('matricula', '')
+        telefone = data.get('telefone', '')
+        tipo_servico = data.get('tipo_serviço', '')  # Aqui cuidado para salvar em 'tipo_servico'
+        dias = data.get('diasDisponiveis', [])
+        horarios = data.get('horariosDisponiveis', [])
 
-        
-            try:
-                usuario = Usuario.objects.get(email=email, cpf=cpf)
-                if check_password(senha, usuario.senha):
-                    return Response({"detail": "Login realizado com sucesso!"}, status=status.HTTP_200_OK)
-                else:
-                        return Response({"erro": "Senha incorreta"}, status=status.HTTP_401_UNAUTHORIZED)
-            except Usuario.DoesNotExist:
-                    return Response({"erro": "Usuário não encontrado"}, status=status.HTTP_404_NOT_FOUND)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if tipo == 'profissional':
+            obj, created = Profissional.objects.get_or_create(
+                cpf=cpf,
+                defaults={
+                    'nome': nome,
+                    'matricula': matricula,
+                    'telefone': telefone,
+                    'tipo_servico': tipo_servico,
+                }
+            )
+        elif tipo == 'estagiario':
+            obj, created = Estagiario.objects.get_or_create(
+                cpf=cpf,
+                defaults={
+                    'nome': nome,
+                    'matricula': matricula,
+                    'telefone': telefone,
+                    'tipo_servico': tipo_servico,
+                }
+            )
+        else:
+            return Response({'error': 'Tipo inválido'}, status=status.HTTP_400_BAD_REQUEST)
 
+        if not created:
+            return Response({'error': 'Usuário com esse CPF já cadastrado.'}, status=status.HTTP_400_BAD_REQUEST)
 
-class MenuView(APIView):
-    permission_classes = [IsAuthenticated]
+        # Agora criamos os objetos Disponibilidade
+        content_type = ContentType.objects.get_for_model(obj)
 
-    def get(self, request):
-        usuario = request.user
-        tipo = get_tipo_usuario(usuario)
+        # Se quiser apagar disponibilidades antigas:
+        Disponibilidade.objects.filter(content_type=content_type, object_id=obj.id).delete()
 
-        #VIEWS QUE RETORNA OS FÓRUNS MAIS CURTIDOS
-        foruns = Forums.objects.order_by('-like')[:10]# top 10 mais curtidos
-        serializer = ForumSerializer(foruns, maniy=True)
+        for dia_str in dias:
+            dia = parse_date(dia_str)
+            if not dia:
+                continue
+            for horario in horarios:
+                Disponibilidade.objects.create(
+                    content_type=content_type,
+                    object_id=obj.id,
+                    dia=dia,
+                    horario=horario
+                )
 
-        data = {
-            'nome': usuario.nome,
-            'email': usuario.email,
-            'tipo_usuario': tipo,
-            'opcoes_menu': [
-                'Editar perfil',
-                'Bate-Papo',
-                'Agendar',
-                'Histórico',
-                'Configurações',
-            ],
-            'extras': {
-                'forum_mais_valiados': serializer.data,  # agora vem do banco!
-                'propagandas': [
-                    {'imagem': '/media/banner1.jpg', 'link': '/promo1'},
-                    {'imagem': '/media/banner2.jpg', 'link': '/promo2'}
-                ]
-            }
-        }
-
-        return Response(data, status=status.HTTP_200_OK)
-
-   
-class EditarPerfilView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def put(self, request):
-        usuario = request.user
-        data = request.data.copy() #salva um copia dos dados
-
-        if 'senha' in data and data['senha']:
-            data['senha'] = make_password(data['senha'])
-
-        serializer = UsuarioSerializer(usuario, data=data, partial = True)
-        if serializer.is_valid():
-             serializer.save()
-             return Response({'detail': 'Perfil atualizado com sucesso!'}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-
-class ForumDetaiView(APIView):
-    def get(self, request, forum_id):
-        try:
-            forum = Forums.objects.get(id=forum_id)
-        except Forums.DoesNotExist:
-            return Response({'detail': 'Fórum não encontrado'}, status=404)
-        
-        serialzier = ForumSerializer(forum)
-        return Response(serialzier.data)
-    
+        return Response({'detail': 'Pré-cadastro realizado com sucesso!'}, status=status.HTTP_201_CREATED)
