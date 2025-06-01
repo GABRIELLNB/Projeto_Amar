@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+from datetime import timedelta
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -147,3 +148,10 @@ REST_FRAMEWORK = {
 }
 
 AUTH_USER_MODEL = 'site_AMAR.Usuario'
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),  # Defina o tempo de expiração do Access Token
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),  # Tempo de expiração do Refresh Token
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+}

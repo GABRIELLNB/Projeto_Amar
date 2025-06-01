@@ -41,7 +41,7 @@ export default function Configuracoes() {
 
   return (
     <div>
-      <SidebarMenu userName="Paulo Avelino" />
+      <SidebarMenu userName="Paulo Avelino" activeItem="Configurações"/>
 
       <div className="ml-[360px] p-6 relative">
         <div className="gap-6 mt-[-50] px-6">

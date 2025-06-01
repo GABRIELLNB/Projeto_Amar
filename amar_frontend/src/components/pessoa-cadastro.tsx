@@ -18,6 +18,7 @@ import {
 import { type JSX, useState } from 'react'
 import { IconButton } from './icon-button'
 import { z } from 'zod'
+import { useRouter } from 'next/navigation'
 
 const cadastroSchema = z.object({
   nome: z.string().min(2, 'Digite seu nome completo'),
@@ -170,12 +171,14 @@ export default function CadastroPessoa({ type, onSubmit }: CadastroPessoaProps) 
   }
 }
 
-
+const router = useRouter()
   return (
     <>
       <div className="bg-pink2000 w-full h-20 fixed top-0 left-0 flex items-center px-4 z-50">
         <div className="flex items-center gap-2">
-          <IconButton className="bg-pink2000 text-pink1000 p-2 rounded-md hover:text-pink4000 hover:bg-pink2000 cursor-pointer">
+          <IconButton className="bg-pink2000 text-pink1000 p-2 rounded-md hover:text-pink4000 hover:bg-pink2000 cursor-pointer"
+          onClick={() => router.push('/menu-adm')}
+          >
             <ArrowLeft />
           </IconButton>
           <h1 className="text-pink1000 text-2xl font-semibold">

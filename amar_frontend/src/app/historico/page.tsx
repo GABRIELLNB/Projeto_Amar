@@ -51,7 +51,7 @@ export default function Histórico() {
 
   return (
     <>
-      <SidebarMenu userName="Paulo Avelino" />
+      <SidebarMenu userName="Paulo Avelino" activeItem="Histórico"/>
 
       <div className="ml-[360px] p-6 relative">
         <div className="gap-6 mt-15 px-6">

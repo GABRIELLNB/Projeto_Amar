@@ -8,15 +8,16 @@ import { IconButton } from '@/components/icon-button'
 import { ArrowLeft } from 'lucide-react'
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 
 export default function Agendar() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
-
+  const [sidebarWidth, setSidebarWidth] = useState(350)
   const sidebarRef = useRef<HTMLDivElement>(null)
   const isResizing = useRef(false)
   const minWidth = 300
   const maxWidth = 450
-  const [sidebarWidth, setSidebarWidth] = useState(350)
+  const router = useRouter()
 
   const startResizing = () => {
     isResizing.current = true
@@ -55,7 +56,9 @@ export default function Agendar() {
           className="bg-pink2000 h-20 flex items-center px-4 sticky top-0 z-40"
           style={{ width: sidebarWidth }}
         >
-          <IconButton className="bg-pink2000 text-pink1000 p-2 rounded-md hover:text-pink4000 hover:bg-pink2000 cursor-pointer">
+          <IconButton className="bg-pink2000 text-pink1000 p-2 rounded-md hover:text-pink4000 hover:bg-pink2000 cursor-pointer"
+            onClick={() => router.push('/menu')}
+          >
             <ArrowLeft />
           </IconButton>
           <h1 className="text-pink1000 text-2xl font-semibold ml-5">FÓRUNS</h1>
@@ -68,8 +71,9 @@ export default function Agendar() {
 
         {/* Conteúdo que rola abaixo da busca */}
         <div className="absolute bottom-3 left-5 right-5 flex justify-between items-center">
-
+          {/* Add content if necessary */}
         </div>
+
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <Button
@@ -99,19 +103,17 @@ export default function Agendar() {
       />
 
       {/* Conteúdo principal */}
-       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Add main content here */}
+      </div>
 
-       </div>
-
-       
       <div
-  className="absolute left-[300px] right-0 p-6 min-h-screen bg-cover bg-fixed bg-center"
-
-  style={{ backgroundImage: "url('/CC2.png')" }}
->
-  <div className="bg-pink2000 w-full h-20 fixed top-0 left-[350px] right-0 z-40" />
-  <ChatInput />
-</div>
+        className="absolute left-[300px] right-0 p-6 min-h-screen bg-cover bg-fixed bg-center"
+        style={{ backgroundImage: "url('/CC2.png')" }}
+      >
+        <div className="bg-pink2000 w-full h-20 fixed top-0 left-[350px] right-0 z-40" />
+        <ChatInput />
+      </div>
     </>
   )
 }

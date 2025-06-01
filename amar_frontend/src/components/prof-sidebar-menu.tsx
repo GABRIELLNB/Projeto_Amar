@@ -1,7 +1,7 @@
-'use client'
-import { Button, ButtonField, ButtonIcon } from '@/components/button'
-import { IconButton } from '@/components/icon-button'
-import { InputField, InputRoot } from '@/components/input'
+"use client";
+import { Button, ButtonField, ButtonIcon } from "@/components/button";
+import { IconButton } from "@/components/icon-button";
+import { InputField, InputRoot } from "@/components/input";
 import {
   CalendarCheck2,
   CalendarPlus,
@@ -12,46 +12,54 @@ import {
   Settings,
   User,
   UserRoundPen,
-} from 'lucide-react'
-import React, { useRef, useState, useEffect, useCallback } from 'react'
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 
 interface SidebarMenuProps {
-  userName: string
+  userName: string;
 }
 
 export default function ProfsidebarMenu({ userName }: SidebarMenuProps) {
-  const [activeItem, setActiveItem] = useState<string>('Menu')
-  const sidebarRef = useRef<HTMLDivElement>(null)
-  const isResizing = useRef(false)
+  const [activeItem, setActiveItem] = useState<string>("Menu");
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const isResizing = useRef(false);
+  const router = useRouter()
 
-  const minWidth = 300
-  const maxWidth = 450
+  const minWidth = 300;
+  const maxWidth = 450;
 
-  const [sidebarWidth, setSidebarWidth] = useState(350)
+  const [sidebarWidth, setSidebarWidth] = useState(350);
 
   const startResizing = () => {
-    isResizing.current = true
-  }
+    isResizing.current = true;
+  };
 
   const stopResizing = useCallback(() => {
-    isResizing.current = false
-  }, [])
+    isResizing.current = false;
+  }, []);
 
   const resize = useCallback((e: MouseEvent) => {
-    if (!isResizing.current) return
-    const maxAllowedWidth = Math.min(maxWidth, window.innerWidth - 50)
-    const newWidth = Math.min(maxAllowedWidth, Math.max(minWidth, e.clientX))
-    setSidebarWidth(newWidth)
-  }, [])
+    if (!isResizing.current) return;
+    const maxAllowedWidth = Math.min(maxWidth, window.innerWidth - 50);
+    const newWidth = Math.min(maxAllowedWidth, Math.max(minWidth, e.clientX));
+    setSidebarWidth(newWidth);
+  }, []);
 
   useEffect(() => {
-    window.addEventListener('mousemove', resize)
-    window.addEventListener('mouseup', stopResizing)
+    window.addEventListener("mousemove", resize);
+    window.addEventListener("mouseup", stopResizing);
     return () => {
-      window.removeEventListener('mousemove', resize)
-      window.removeEventListener('mouseup', stopResizing)
-    }
-  }, [resize, stopResizing])
+      window.removeEventListener("mousemove", resize);
+      window.removeEventListener("mouseup", stopResizing);
+    };
+  }, [resize, stopResizing]);
+
+    const handleMenuClick = (label: string, path: string) => {
+    setActiveItem(label)
+    router.push(path)
+  }
+
 
   return (
     <>
@@ -60,8 +68,7 @@ export default function ProfsidebarMenu({ userName }: SidebarMenuProps) {
         className="fixed top-0 left-0 h-screen bg-pink3000 border-r border-pink5000 z-50 flex flex-col"
         style={{ width: sidebarWidth }}
       >
-        <div className="bg-pink2000 w-full h-2 fixed top-0 left-0 flex items-center px-4">
-        </div>
+        <div className="bg-pink2000 w-full h-2 fixed top-0 left-0 flex items-center px-4"></div>
         {/* Topo e meio */}
         <div className="flex-grow overflow-auto">
           <div className="flex justify-center mt-10">
@@ -74,31 +81,41 @@ export default function ProfsidebarMenu({ userName }: SidebarMenuProps) {
             <h1 className="text-4xl font-bold text-pink4000">{userName}</h1>
           </div>
 
-         {[
-          { icon: <Home />, label: 'Menu' },
-          { icon: <UserRoundPen />, label: 'Editar Perfil' },
-          { icon: <MessageSquare />, label: 'Bate-Papo' },
-          { icon: <CalendarPlus />, label: 'Agendar' },
-          { icon: <FileClock />, label: 'Histórico' },
-          { icon: <Settings />, label: 'Configurações' },
-          { icon: <CalendarCheck2 />, label: 'Consultas Marcadas' },
-        ].map((item, index) => (
-          <div key={index} className="flex justify-center mb-2">
-            <Button
-              className={`flex justify-between items-center px-5 h-12 font-semibold rounded-xl w-full cursor-pointer transition-colors duration-300 ${
-                activeItem === item.label
-                  ? 'bg-pink2000 text-pink1000'
-                  : 'text-pink4000 hover:bg-pink2000 hover:text-pink1000'
-              }`}
-              onClick={() => setActiveItem(item.label)}
-            >
-              <ButtonIcon className={activeItem === item.label ? 'text-pink1000' : 'text-pink4000'}>
-                {item.icon}
-              </ButtonIcon>
-              <ButtonField className="flex-1">{item.label}</ButtonField>
-            </Button>
-          </div>
-        ))}
+          {[
+            { icon: <Home />, label: "Menu", path: "/menu" },
+            { icon: <UserRoundPen />, label: "Editar Perfil", path: "/perfil" },
+            { icon: <MessageSquare />, label: "Bate-Papo", path: "/forum" },
+            { icon: <CalendarPlus />, label: "Agendar", path: "/agendar" },
+            { icon: <FileClock />, label: "Histórico", path: "/historico" },
+            {
+              icon: <Settings />,
+              label: "Configurações",
+              path: "/configuracoes",
+            },
+            { icon: <CalendarCheck2 />, label: "Consultas Marcadas", path: "/historico" },
+          ].map((item, index) => (
+            <div key={index} className="flex justify-center mb-2">
+              <Button
+                className={`flex justify-between items-center px-5 h-12 font-semibold rounded-xl w-full cursor-pointer transition-colors duration-300 ${
+                  activeItem === item.label
+                    ? "bg-pink2000 text-pink1000"
+                    : "text-pink4000 hover:bg-pink2000 hover:text-pink1000"
+                }`}
+                onClick={() => setActiveItem(item.label)}
+              >
+                <ButtonIcon
+                  className={
+                    activeItem === item.label
+                      ? "text-pink1000"
+                      : "text-pink4000"
+                  }
+                >
+                  {item.icon}
+                </ButtonIcon>
+                <ButtonField className="flex-1">{item.label}</ButtonField>
+              </Button>
+            </div>
+          ))}
         </div>
 
         {/* Parte inferior - input + botão */}
@@ -122,5 +139,5 @@ export default function ProfsidebarMenu({ userName }: SidebarMenuProps) {
         aria-label="Resize Sidebar"
       />
     </>
-  )
+  );
 }

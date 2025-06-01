@@ -37,7 +37,7 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
    
     
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['cpf', 'matricula']
+    REQUIRED_FIELDS = ['cpf','nome']
 
     objects = UsuarioManager()
 
@@ -45,7 +45,7 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         return self.email
 class Profissional(models.Model):
     cpf = models.CharField(max_length=14, unique=True)
-    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, null=True, blank=True)
+    usuario = models.OneToOneField(Usuario, on_delete=models.SET_NULL, null=True, blank=True)
     nome = models.CharField(max_length=100, blank=True)
     matricula = models.CharField(max_length=20, blank=True, unique=True)
     telefone = models.CharField(max_length=20, blank=True)
@@ -63,7 +63,7 @@ class Profissional(models.Model):
 
 class Estagiario(models.Model):
     cpf = models.CharField(max_length=14, unique=True)
-    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, null=True, blank=True)
+    usuario = models.OneToOneField(Usuario, on_delete=models.SET_NULL, null=True, blank=True)
     nome = models.CharField(max_length=100, blank=True)
     matricula = models.CharField(max_length=20, blank=True, unique=True)
     telefone = models.CharField(max_length=20, blank=True)
@@ -102,6 +102,42 @@ class Disponibilidade(models.Model):
 
     def __str__(self):
         return f'{self.atendente.nome} - {self.dia} ({self.horario})'
+
+
+class Agendamento(models.Model):
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    atendente = GenericForeignKey('content_type', 'object_id')
+
+    dia = models.DateField()
+    horario = models.CharField(max_length=50)
+
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    STATUS_CHOICES = [
+        ('disponivel', 'Disponível'),
+        ('pendente', 'Pendente'),
+        ('cancelado', 'Cancelado'),
+    ]
+
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='disponivel')
+
+    def clean(self):
+        super().clean()
+        if self.content_type.model_class() not in [Profissional, Estagiario]:
+            raise ValidationError("Agendamento só pode ser com Profissional ou Estagiário.")
+
+        # Verificar se já existe agendamento para esse atendente nesse dia e horário
+        if Agendamento.objects.filter(
+            content_type=self.content_type,
+            object_id=self.object_id,
+            dia=self.dia,
+            horario=self.horario
+        ).exists():
+            raise ValidationError("Este horário já está agendado para este atendente.")
+
+
 '''
 class Forums(models.Model):
     imag_png = models.ImageField(upload_to='imagens/')
