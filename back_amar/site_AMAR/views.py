@@ -218,6 +218,37 @@ class AgendamentosPorDataView(APIView):
 
         return Response(profissionais_disponiveis)
 
+
+class DisponibilidadesPorDataView(APIView):
+    def get(self, request, data):
+        try:
+            data_parsed = datetime.strptime(data, "%Y-%m-%d").date()
+        except ValueError:
+            return Response({"error": "Formato de data inválido. Use YYYY-MM-DD."}, status=400)
+
+        disponibilidades = Disponibilidade.objects.filter(dia=data_parsed)
+        agendamentos_ocupados = Agendamento.objects.filter(dia=data_parsed).exclude(status='cancelado')
+
+        ocupados_set = set(
+            (a.content_type_id, a.object_id, a.horario) for a in agendamentos_ocupados
+        )
+
+        disponibilidades_livres = [
+            d for d in disponibilidades
+            if (d.content_type_id, d.object_id, d.horario) not in ocupados_set
+        ]
+
+        serializer = DisponibilidadeSerializer(disponibilidades_livres, many=True)
+        
+        if not serializer.data:
+            return Response({"error": "Nenhuma disponibilidade encontrada para essa data."}, status=404)
+
+        return Response(serializer.data)
+
+
+
+
+'''
 from django.contrib.contenttypes.models import ContentType
 from .models import Disponibilidade
 
@@ -260,30 +291,4 @@ def listar_horarios_disponiveis(request):
             })
 
     return Response(resultado)
-
-
-class DisponibilidadesPorDataView(APIView):
-    def get(self, request, data):
-        try:
-            data_parsed = datetime.strptime(data, "%Y-%m-%d").date()
-        except ValueError:
-            return Response({"error": "Formato de data inválido. Use YYYY-MM-DD."}, status=400)
-
-        disponibilidades = Disponibilidade.objects.filter(dia=data_parsed)
-        agendamentos_ocupados = Agendamento.objects.filter(dia=data_parsed).exclude(status='cancelado')
-
-        ocupados_set = set(
-            (a.content_type_id, a.object_id, a.horario) for a in agendamentos_ocupados
-        )
-
-        disponibilidades_livres = [
-            d for d in disponibilidades
-            if (d.content_type_id, d.object_id, d.horario) not in ocupados_set
-        ]
-
-        serializer = DisponibilidadeSerializer(disponibilidades_livres, many=True)
-        
-        if not serializer.data:
-            return Response({"error": "Nenhuma disponibilidade encontrada para essa data."}, status=404)
-
-        return Response(serializer.data)
+'''
