@@ -154,6 +154,7 @@ class EstagiarioDetailView(APIView):
 
 
 # AGENDAMENTO
+
 class AgendamentoListCreateView(generics.ListCreateAPIView):
     queryset = Agendamento.objects.all()
     serializer_class = AgendamentoSerializer
@@ -188,7 +189,10 @@ class AgendamentosPorDataView(APIView):
         disponibilidades = Disponibilidade.objects.filter(dia=data_parsed, status='disponivel')
 
         # Passo 2: Verificar quais desses horários já foram agendados
-        agendamentos = Agendamento.objects.filter(dia=data_parsed, status='disponivel')
+        agendamentos = Agendamento.objects.filter(
+            dia=data_parsed,
+            status__in=['pendente', 'confirmado']
+        )
 
         # Obter os horários já agendados
         horarios_agendados = agendamentos.values_list('horario', flat=True)
@@ -198,7 +202,7 @@ class AgendamentosPorDataView(APIView):
 
         # Passo 4: Retornar os profissionais e horários disponíveis
         profissionais_disponiveis = [
-            {"profissional": disponibilidade.profissional.nome, "horario": disponibilidade.horario}
+            {"profissional": disponibilidade.atendente.nome, "horario": disponibilidade.horario}
             for disponibilidade in horarios_disponiveis
         ]
 
@@ -259,9 +263,7 @@ class DisponibilidadesPorDataView(APIView):
             return Response({"error": "Formato de data inválido. Use YYYY-MM-DD."}, status=400)
 
         disponibilidades = Disponibilidade.objects.filter(dia=data_parsed)
-        agendamentos_ocupados = Agendamento.objects.filter(
-            dia=data_parsed,
-        ).exclude(status='cancelado')
+        agendamentos_ocupados = Agendamento.objects.filter(dia=data_parsed).exclude(status='cancelado')
 
         ocupados_set = set(
             (a.content_type_id, a.object_id, a.horario) for a in agendamentos_ocupados
@@ -272,7 +274,6 @@ class DisponibilidadesPorDataView(APIView):
             if (d.content_type_id, d.object_id, d.horario) not in ocupados_set
         ]
 
-        # Serialize the available times
         serializer = DisponibilidadeSerializer(disponibilidades_livres, many=True)
         
         if not serializer.data:

@@ -1,3 +1,4 @@
+from django.apps import apps
 from rest_framework import serializers
 from .models import Agendamento, Estagiario, Profissional, Usuario
 from django.contrib.auth.hashers import make_password
@@ -43,74 +44,67 @@ from rest_framework import serializers
 from django.contrib.contenttypes.models import ContentType
 from .models import Agendamento
 
+from rest_framework import serializers
+from django.core.exceptions import ValidationError as DjangoValidationError
+from rest_framework.exceptions import ValidationError as DRFValidationError
+
 class AgendamentoSerializer(serializers.ModelSerializer):
-    usuario = UsuarioSerializer(read_only=True)
-    atendente_type = serializers.CharField(write_only=True)
-    atendente_id = serializers.IntegerField(write_only=True)
-    
     class Meta:
         model = Agendamento
-        fields = ['id', 'usuario', 'atendente_type', 'atendente_id', 'dia', 'horario', 'status', 'criado_em']
+        fields = '__all__'
+        read_only_fields = ('usuario', 'criado_em')
 
     def validate(self, data):
-        # Verifica se atendente_type é válido
-        atendente_type = data.get('atendente_type')
-        atendente_id = data.get('atendente_id')
+        content_type = data.get('content_type')
+        object_id = data.get('object_id')
+        dia = data.get('dia')
+        horario = data.get('horario')
 
-        if atendente_type not in ['profissional', 'estagiario']:
-            raise serializers.ValidationError("atendente_type deve ser 'profissional' ou 'estagiario'.")
+        if not all([content_type, object_id, dia, horario]):
+            raise DRFValidationError("Campos content_type, object_id, dia e horario são obrigatórios.")
 
-        # Verifica se atendente existe
-        model_map = {
-            'profissional': Profissional,
-            'estagiario': Estagiario,
-        }
-        model = model_map[atendente_type]
-        try:
-            atendente = model.objects.get(id=atendente_id)
-        except model.DoesNotExist:
-            raise serializers.ValidationError("Atendente não encontrado.")
+        model_class = content_type.model_class()
+        profissional_class = apps.get_model('site_AMAR', 'Profissional')
+        estagiario_class = apps.get_model('site_AMAR', 'Estagiario')
 
-        # Checar conflito de agendamento
+        if model_class not in [profissional_class, estagiario_class]:
+            raise DRFValidationError("Agendamento só pode ser com Profissional ou Estagiário.")
+
         if Agendamento.objects.filter(
-            content_type=ContentType.objects.get_for_model(model),
-            object_id=atendente_id,
-            dia=data.get('dia'),
-            horario=data.get('horario'),
-            status__in=['disponivel', 'pendente']
+            content_type=content_type,
+            object_id=object_id,
+            dia=dia,
+            horario=horario
         ).exists():
-            raise serializers.ValidationError("Horário já agendado para esse atendente.")
+            raise DRFValidationError("Este horário já está agendado para este atendente.")
 
         return data
 
     def create(self, validated_data):
-        atendente_type = validated_data.pop('atendente_type')
-        atendente_id = validated_data.pop('atendente_id')
+        usuario = self.context['request'].user
+        validated_data.pop('usuario', None)
+        return Agendamento.objects.create(usuario=usuario, **validated_data)
 
-        model_map = {
-            'profissional': Profissional,
-            'estagiario': Estagiario,
-        }
-        model = model_map[atendente_type]
-        content_type = ContentType.objects.get_for_model(model)
-
-        agendamento = Agendamento.objects.create(
-            usuario=self.context['request'].user,
-            content_type=content_type,
-            object_id=atendente_id,
-            **validated_data
-        )
-        return agendamento
 
 from .models import Disponibilidade
 
 class DisponibilidadeSerializer(serializers.ModelSerializer):
     atendente_nome = serializers.CharField(source='atendente.nome', read_only=True)
     tipo_atendente = serializers.CharField(source='content_type.model', read_only=True)
+    servico = serializers.SerializerMethodField()
+    object_id = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Disponibilidade
-        fields = ['id', 'atendente_nome', 'tipo_atendente', 'dia', 'horario']
+        fields = ['id', 'atendente_nome', 'tipo_atendente', 'dia', 'horario', 'servico', 'object_id']
+        
+    def get_servico(self, obj):
+        if obj.atendente:
+            return obj.atendente.tipo_servico
+        return None
+    
+    
+    
 '''
 class LoginSerializer(serializers.Serializer):
     cpf = serializers.CharField()

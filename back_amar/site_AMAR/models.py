@@ -1,3 +1,4 @@
+from datetime import timedelta
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
@@ -116,19 +117,21 @@ class Agendamento(models.Model):
     criado_em = models.DateTimeField(auto_now_add=True)
 
     STATUS_CHOICES = [
-        ('disponivel', 'Disponível'),
-        ('pendente', 'Pendente'),
+        ('pendente', 'Pendente'),  
+        ('confirmado', 'Confirmado'),  
         ('cancelado', 'Cancelado'),
     ]
 
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='disponivel')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='confirmado')
 
     def clean(self):
         super().clean()
+
+        # Confirma que o atendente é Profissional ou Estagiario
         if self.content_type.model_class() not in [Profissional, Estagiario]:
             raise ValidationError("Agendamento só pode ser com Profissional ou Estagiário.")
 
-        # Verificar se já existe agendamento para esse atendente nesse dia e horário
+        # Verifica se o horário já está agendado para o atendente
         if Agendamento.objects.filter(
             content_type=self.content_type,
             object_id=self.object_id,
@@ -137,7 +140,28 @@ class Agendamento(models.Model):
         ).exists():
             raise ValidationError("Este horário já está agendado para este atendente.")
 
+        # Limitar 3 agendamentos por semana com atendentes diferentes
 
+        # Define o início e fim da semana (segunda a domingo)
+        inicio_semana = self.dia - timedelta(days=self.dia.weekday())
+        fim_semana = inicio_semana + timedelta(days=6)
+
+        agendamentos_semana = Agendamento.objects.filter(
+            usuario=self.usuario,
+            dia__range=(inicio_semana, fim_semana),
+        )
+        if self.pk:
+            agendamentos_semana = agendamentos_semana.exclude(pk=self.pk)
+
+        atendentes_semana = agendamentos_semana.values_list('content_type', 'object_id').distinct()
+
+        atendente_atual = (self.content_type_id, self.object_id)
+        if atendente_atual not in atendentes_semana:
+            if atendentes_semana.count() >= 3:
+                raise ValidationError("Você já atingiu o limite de 3 agendamentos com atendentes diferentes nesta semana.")
+    def save(self, *args, **kwargs):
+        self.full_clean()  # chama o clean() para validar antes de salvar
+        super().save(*args, **kwargs)            
 '''
 class Forums(models.Model):
     imag_png = models.ImageField(upload_to='imagens/')
