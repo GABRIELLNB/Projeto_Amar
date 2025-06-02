@@ -10,8 +10,12 @@ from .views import (
     AgendamentosPorDataView,
     listar_horarios_disponiveis
 )
+from .views import MyTokenObtainPairView
+from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
+    path('api/token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     
     path('api/cadastro/', CadastroView.as_view(), name='cadastro'),
     path('api/cadastro-funcionario/', PreCadastroFuncionarioView.as_view(), name='cadastro-funcionario'),

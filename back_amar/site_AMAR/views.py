@@ -22,6 +22,13 @@ from .serializers import (
     EstagiarioSerializer
 )
 
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import MyTokenObtainPairSerializer
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer
+
+
 # Utilitário
 def normalizar_cpf(cpf):
     return re.sub(r'\D', '', cpf)

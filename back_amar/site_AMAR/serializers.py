@@ -3,6 +3,25 @@ from rest_framework import serializers
 from .models import Agendamento, Estagiario, Profissional, Usuario
 from django.contrib.auth.hashers import make_password
 
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        
+        data['is_superuser'] = self.user.is_superuser
+
+        user = self.user
+        user_type = 'usuario'  # padrão
+
+        if hasattr(user, 'profissional'):
+            user_type = 'profissional'
+        elif hasattr(user, 'estagiario'):
+            user_type = 'estagiario'
+
+        data['user_type'] = user_type
+
+        return data
 
 
 class UsuarioSerializer(serializers.ModelSerializer):
@@ -15,7 +34,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         senha = validated_data.pop('senha')
         usuario = Usuario(**validated_data)
-        usuario.senha = senha  # usa o setter para hash
+        usuario.set_password(senha)  # usa o setter para hash
         usuario.save()
         return usuario
     
@@ -102,9 +121,6 @@ class DisponibilidadeSerializer(serializers.ModelSerializer):
         if obj.atendente:
             return obj.atendente.tipo_servico
         return None
-    
-    
-    
 '''
 class LoginSerializer(serializers.Serializer):
     cpf = serializers.CharField()
