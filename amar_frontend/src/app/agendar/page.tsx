@@ -17,6 +17,8 @@ type HorarioDisponivel = {
   atendente_nome: string;
   tipo_atendente: string;
   servico: string 
+  sala:string
+  local:string
   // outros campos que a API enviar, se houver
 };
 
@@ -292,8 +294,8 @@ const marcarHorario = async (horarioId: number) => {
                       <td className="p-2">{item.atendente_nome}</td>
                       <td className="p-2">{item.tipo_atendente}</td>
                       <td className="p-2">{item.servico}</td>
-                      <td className="p-2">-</td>
-                      <td className="p-2">-</td>
+                      <td className="p-2">{item.local}</td>
+                      <td className="p-2">{item.sala}</td>
                       <td className="p-2">
                         {agendados.includes(item.id) ? (
                           <button

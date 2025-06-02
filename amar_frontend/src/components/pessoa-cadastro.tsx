@@ -83,7 +83,7 @@ export default function CadastroPessoa({ type, onSubmit }: CadastroPessoaProps) 
     setFormData((prev) => {
       const updated = [...prev.disponibilidades];
       updated[index].dia = value;
-      return { ...prev, disponibilidade: updated };
+      return { ...prev, disponibilidades: updated };
     });
   };
 
@@ -95,14 +95,14 @@ export default function CadastroPessoa({ type, onSubmit }: CadastroPessoaProps) 
     setFormData((prev) => {
       const updated = [...prev.disponibilidades];
       updated[dispIndex].horarios[horarioIndex] = value;
-      return { ...prev, disponibilidade: updated };
+      return { ...prev, disponibilidades: updated };
     });
   };
 
   const addDiaDisponivel = () => {
     setFormData((prev) => ({
       ...prev,
-      disponibilidade: [...prev.disponibilidades, { dia: "", horarios: [""] }],
+      disponibilidades: [...prev.disponibilidades, { dia: "", horarios: [""] }],
     }));
   };
 
@@ -110,7 +110,7 @@ export default function CadastroPessoa({ type, onSubmit }: CadastroPessoaProps) 
     setFormData((prev) => {
       const updated = [...prev.disponibilidades];
       updated.splice(index, 1);
-      return { ...prev, disponibilidade: updated };
+      return { ...prev, disponibilidades: updated };
     });
   };
 
@@ -122,7 +122,7 @@ export default function CadastroPessoa({ type, onSubmit }: CadastroPessoaProps) 
         horarios: [...updated[index].horarios, ""],
       };
       updated[index] = diaAtualizado;
-      return { ...prev, disponibilidade: updated };
+      return { ...prev, disponibilidades: updated };
     });
   };
 
@@ -130,7 +130,7 @@ export default function CadastroPessoa({ type, onSubmit }: CadastroPessoaProps) 
     setFormData((prev) => {
       const updated = [...prev.disponibilidades];
       updated[dispIndex].horarios.splice(horarioIndex, 1);
-      return { ...prev, disponibilidade: updated };
+      return { ...prev, disponibilidades: updated };
     });
   };
 
@@ -274,7 +274,7 @@ const router = useRouter()
           </div>
 
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 cursor-pointer">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 cursor-pointer md:w-4/2">
             <div className="flex flex-col gap-2">
               <label className="text-sm text-pink4000 font-medium">Datas Disponíveis</label>
               {formData.disponibilidades.map((disp, index) => (
@@ -290,8 +290,8 @@ const router = useRouter()
                       </InputIcon>
                       <input
                         type="date"
-                        name={`disponibilidade[${index}].dia`}
-                        id={`disponibilidade-dia-${index}`}
+                        name={`disponibilidades[${index}].dia`}
+                        id={`disponibilidades-dia-${index}`}
                         value={disp.dia}
                         onChange={(e) => handleDiaChange(index, e.target.value)}
                         className="flex-1 outline-0 text-pink4000 bg-transparent"
@@ -317,8 +317,8 @@ const router = useRouter()
                         </InputIcon>
                         <input
                           type="time"
-                          name={`disponibilidade[${index}].horarios[${hIndex}]`}
-                          id={`disponibilidade-horario-${index}-${hIndex}`}
+                          name={`s[${index}].horarios[${hIndex}]`}
+                          id={`disponibilidades-horario-${index}-${hIndex}`}
                           value={horario}
                           onChange={(e) =>
                             handleHorarioChange(index, hIndex, e.target.value)
@@ -340,7 +340,7 @@ const router = useRouter()
                   <Button
                     type="button"
                     onClick={() => addHorario(index)}
-                    className="text-sm text-pink4000 hover:underline mt-2 self-start"
+                    className="text-sm text-pink4000 hover:underline mt-2 self-start cursor-pointer"
                   >
                     + Adicionar horário
                   </Button>
@@ -350,7 +350,7 @@ const router = useRouter()
               <Button
                 type="button"
                 onClick={addDiaDisponivel}
-                className="text-sm text-pink4000 hover:underline mt-2 self-start"
+                className="text-sm text-pink4000 hover:underline mt-2 self-start cursor-pointer"
               >
                 + Adicionar dia
               </Button>
