@@ -8,7 +8,7 @@ from .views import (
     EstagiarioListView, EstagiarioDetailView,
     AgendamentoListCreateView, AgendamentoDetailView,
     AgendamentosPorDataView,
-    listar_horarios_disponiveis
+    
 )
 from .views import MyTokenObtainPairView
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -32,7 +32,7 @@ urlpatterns = [
     path('api/agendamentos/', AgendamentoListCreateView.as_view(), name='agendamento-list-create'),
     path('api/agendamentos/<int:pk>/', AgendamentoDetailView.as_view(), name='agendamento-detail'),
     path('api/agendamentos-por-data/<str:data>/', AgendamentosPorDataView.as_view(), name='agendamentos-por-data'),
-    path('api/horarios-disponiveis/', listar_horarios_disponiveis, name='horarios-disponiveis'),
+   
     path('api/disponibilidades-por-data/<str:data>/', DisponibilidadesPorDataView.as_view(), name='horarios-disponiveis-por-data'),
 
     #path('api/Login/', LoginView.as_view(), name='Login'),

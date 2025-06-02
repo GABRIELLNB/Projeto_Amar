@@ -46,8 +46,8 @@ const marcarHorario = async (horarioId: number) => {
   console.log("tipoAtendente recebido:", tipoAtendente);
 
   const contentTypeMap: Record<string, number> = {
-    profissional: 9,
-    estagiario: 8,
+    profissional: 10,
+    estagiario: 9,
   };
 
   const contentType = contentTypeMap[tipoAtendente];
