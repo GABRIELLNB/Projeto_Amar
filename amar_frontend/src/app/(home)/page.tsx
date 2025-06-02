@@ -34,25 +34,24 @@ async function onLogin(data: LoginSchema) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: data.email,  // aqui depende do backend; pode ser email ou username
+        email: data.email,
         password: data.senha,
       }),
     })
 
-    if (!response.ok) {
-      throw new Error('Erro no login')
-    }
+    if (!response.ok) throw new Error('Erro no login')
 
     const json = await response.json()
-    console.log('Login bem-sucedido', json)
-    // Exemplo de json:
-    // { access: 'jwt_access_token', refresh: 'jwt_refresh_token' }
 
-    // Salve o token (access) no localStorage/sessionStorage
     localStorage.setItem('token', json.access)
 
-    // Redirecione para a página protegida
-    router.push('/menu')
+    if (json.is_superuser) {
+      router.push('/menu-adm')
+    } else if (json.user_type === 'profissional' || json.user_type === 'estagiario') {
+      router.push('/menu-profissional')
+    } else {
+      router.push('/menu')
+    }
   } catch (error) {
     console.error('Falha no login:', error)
     alert('Usuário ou senha inválidos')

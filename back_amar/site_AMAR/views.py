@@ -6,7 +6,6 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from datetime import datetime
 
 from .models import (
     Agendamento,
@@ -23,12 +22,19 @@ from .serializers import (
     EstagiarioSerializer
 )
 
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import MyTokenObtainPairSerializer
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer
+
+
 # Utilitário
 def normalizar_cpf(cpf):
     return re.sub(r'\D', '', cpf)
 
 
-# Cadastro de usuario não profissionais/estagiários
+# CADASTRO
 class CadastroView(APIView):
     permission_classes = [AllowAny]
 
@@ -155,49 +161,55 @@ class EstagiarioDetailView(APIView):
 
 
 # AGENDAMENTO
+
 class AgendamentoListCreateView(generics.ListCreateAPIView):
-    queryset = Agendamento.objects.all() #Pega todos os agendamentos do bd
+    queryset = Agendamento.objects.all()
     serializer_class = AgendamentoSerializer
     permission_classes = [IsAuthenticated]
 
-    #Validação dos dados
     def perform_create(self, serializer):
         serializer.save(usuario=self.request.user)
 
 
 class AgendamentoDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Agendamento.objects.all()
-    #Cada usuario só poderá acessar seus agendamentos
-    def get_queryset(self):
-        return Agendamento.objects.filter(usario=self.request.user)
     serializer_class = AgendamentoSerializer
     permission_classes = [IsAuthenticated]
 
 
+# views.py
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.utils.dateparse import parse_date
+from datetime import datetime
+from .models import Agendamento
+
 class AgendamentosPorDataView(APIView):
-    #Faz uma requisição por data
     def get(self, request, data):
-        #Coverção para o modo date
+        # Convertendo a data para o formato DateTime
         try:
             data_parsed = datetime.strptime(data, '%Y-%m-%d').date()
         except ValueError:
             return Response({"error": "Data inválida"}, status=400)
 
-        #Busca no bd para aquela data está disponivel
+        # Passo 1: Buscar os horários disponíveis para a data
         disponibilidades = Disponibilidade.objects.filter(dia=data_parsed, status='disponivel')
 
-        #Mostra quais horarios estão disponiveis e quais não estão
-        agendamentos = Agendamento.objects.filter(dia=data_parsed, status='disponivel')
+        # Passo 2: Verificar quais desses horários já foram agendados
+        agendamentos = Agendamento.objects.filter(
+            dia=data_parsed,
+            status__in=['pendente', 'confirmado']
+        )
 
-        #Exibi os horarios que já foram agendados
+        # Obter os horários já agendados
         horarios_agendados = agendamentos.values_list('horario', flat=True)
 
-        #Exibi os horarios que estão livres
+        # Passo 3: Filtrar as disponibilidades para excluir os horários já agendados
         horarios_disponiveis = disponibilidades.exclude(horario__in=horarios_agendados)
 
-        #Cada horario agendado tem seus prof e horario
+        # Passo 4: Retornar os profissionais e horários disponíveis
         profissionais_disponiveis = [
-            {"profissional": disponibilidade.profissional.nome, "horario": disponibilidade.horario}
+            {"profissional": disponibilidade.atendente.nome, "horario": disponibilidade.horario}
             for disponibilidade in horarios_disponiveis
         ]
 
@@ -206,15 +218,16 @@ class AgendamentosPorDataView(APIView):
 
         return Response(profissionais_disponiveis)
 
+from django.contrib.contenttypes.models import ContentType
+from .models import Disponibilidade
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
-
 def listar_horarios_disponiveis(request):
-    #filtrar por data
+    # Opcional: filtrar por data, se informado na query string
     data = request.query_params.get('dia')
 
-    #filtrar só Profissional e Estagiario (Precisa ser revisto!) 
+    # ContentTypes para filtrar só Profissional e Estagiario
     prof_ct = ContentType.objects.get_for_model(Profissional)
     est_ct = ContentType.objects.get_for_model(Estagiario)
 
@@ -224,25 +237,6 @@ def listar_horarios_disponiveis(request):
     )
     if data:
         disponibilidades = disponibilidades.filter(dia=data)
-    
-    #Identificação de quem é o usuario
-    user = request.user
-    user_ct = None
-    user_obj_id = None
-    
-    #remove as diponibilidades dos proprios usuários(ou seja pra ele não alto se atender)
-    if hasattr(user, 'profissional'):
-        user_ct =prof_ct
-        user_obj_id = user.profissional.id
-    elif hasattr(user, 'estagiario'):
-        user_ct = est_ct
-        user_obj_id = user.estagiario.id
-
-    if user_ct and user_obj_id:
-        disponibilidades = disponibilidades.exclude(
-            content_type=user_ct,
-            object_id=user_obj_id
-        )
 
     resultado = []
 
@@ -268,18 +262,15 @@ def listar_horarios_disponiveis(request):
     return Response(resultado)
 
 
-#ISSO FAZ A MESMA COISA QUE A CALSSE DA  LINHA 158
-class DisponibilidadesPorDataView(APIView): 
+class DisponibilidadesPorDataView(APIView):
     def get(self, request, data):
         try:
-            data_parsed = datetime.strptime(data, "%Y-%m-%d").date() 
+            data_parsed = datetime.strptime(data, "%Y-%m-%d").date()
         except ValueError:
             return Response({"error": "Formato de data inválido. Use YYYY-MM-DD."}, status=400)
 
         disponibilidades = Disponibilidade.objects.filter(dia=data_parsed)
-        agendamentos_ocupados = Agendamento.objects.filter(
-            dia=data_parsed,
-        ).exclude(status='cancelado')
+        agendamentos_ocupados = Agendamento.objects.filter(dia=data_parsed).exclude(status='cancelado')
 
         ocupados_set = set(
             (a.content_type_id, a.object_id, a.horario) for a in agendamentos_ocupados
@@ -290,7 +281,6 @@ class DisponibilidadesPorDataView(APIView):
             if (d.content_type_id, d.object_id, d.horario) not in ocupados_set
         ]
 
-        # Serialize the available times
         serializer = DisponibilidadeSerializer(disponibilidades_livres, many=True)
         
         if not serializer.data:

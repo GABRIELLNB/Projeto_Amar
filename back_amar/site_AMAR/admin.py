@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Usuario, Profissional, Estagiario
+from .models import Agendamento, Disponibilidade, Usuario, Profissional, Estagiario
 from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import gettext_lazy as _
 
@@ -33,3 +33,5 @@ class EstagiarioAdmin(admin.ModelAdmin):
 # Registrar admins personalizados
 admin.site.register(Profissional, ProfissionalAdmin)
 admin.site.register(Estagiario, EstagiarioAdmin)
+admin.site.register(Agendamento)
+admin.site.register(Disponibilidade)
