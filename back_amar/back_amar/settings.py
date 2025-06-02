@@ -81,11 +81,11 @@ WSGI_APPLICATION = 'back_amar.wsgi.application'
 DATABASES = {
      'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'BD_AMAR',
+        'NAME': 'bd_amar',
         'USER': 'root',
-        'PASSWORD': 'ABlSrsDvSBVCxNdSRNhtaJRtKYQfZKfc',  # senha vazia conforme você passou
-        'HOST': 'nozomi.proxy.rlwy.net',
-        'PORT': '29365',
+        'PASSWORD': '0609',  
+        'HOST': '127.0.0.1',
+        'PORT': '3306',
     }
 }
 
