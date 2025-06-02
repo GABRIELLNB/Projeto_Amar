@@ -78,6 +78,8 @@ class AgendamentoSerializer(serializers.ModelSerializer):
         object_id = data.get('object_id')
         dia = data.get('dia')
         horario = data.get('horario')
+        local = data.get('local')
+        sala = data.get('sala')
 
         if not all([content_type, object_id, dia, horario]):
             raise DRFValidationError("Campos content_type, object_id, dia e horario são obrigatórios.")
@@ -93,7 +95,9 @@ class AgendamentoSerializer(serializers.ModelSerializer):
             content_type=content_type,
             object_id=object_id,
             dia=dia,
-            horario=horario
+            horario=horario,
+            local=local,
+            sala=sala
         ).exists():
             raise DRFValidationError("Este horário já está agendado para este atendente.")
 
@@ -115,7 +119,7 @@ class DisponibilidadeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Disponibilidade
-        fields = ['id', 'atendente_nome', 'tipo_atendente', 'dia', 'horario', 'servico', 'object_id']
+        fields = ['id', 'atendente_nome', 'tipo_atendente', 'dia', 'horario', 'servico', 'object_id', 'local', 'sala']
         
     def get_servico(self, obj):
         if obj.atendente:

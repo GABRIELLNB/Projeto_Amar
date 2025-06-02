@@ -86,8 +86,10 @@ class Disponibilidade(models.Model):
     atendente = GenericForeignKey('content_type', 'object_id')
 
     dia = models.DateField()
-    horario = models.CharField(max_length=50)  # Exemplo: "08:00 - 12:00"
-
+    horario = models.CharField(max_length=50) 
+    local = models.CharField(max_length=100, blank=True, null=True)
+    sala = models.CharField(max_length=50, blank=True, null=True)
+    
     def clean(self):
         super().clean()
         if self.content_type.model_class() not in [Profissional, Estagiario]:
@@ -97,12 +99,14 @@ class Disponibilidade(models.Model):
             content_type=self.content_type,
             object_id=self.object_id,
             dia=self.dia,
-            horario=self.horario
+            horario=self.horario,
+            local=self.local,
+            sala=self.sala
         ).exists():
             raise ValidationError("Já existe uma disponibilidade para esse atendente neste dia e horário.")
 
     def __str__(self):
-        return f'{self.atendente.nome} - {self.dia} ({self.horario})'
+        return f'{self.atendente.nome} - {self.dia} ({self.horario}) {self.local}, {self.sala}'
 
 
 class Agendamento(models.Model):
@@ -113,6 +117,8 @@ class Agendamento(models.Model):
 
     dia = models.DateField()
     horario = models.CharField(max_length=50)
+    local = models.CharField(max_length=100, blank=True, null=True)
+    sala = models.CharField(max_length=50, blank=True, null=True)    # Novo campo 
 
     criado_em = models.DateTimeField(auto_now_add=True)
 
@@ -136,7 +142,10 @@ class Agendamento(models.Model):
             content_type=self.content_type,
             object_id=self.object_id,
             dia=self.dia,
-            horario=self.horario
+            horario=self.horario,
+            local=self.local,
+            sala=self.sala
+            
         ).exists():
             raise ValidationError("Este horário já está agendado para este atendente.")
 

@@ -57,8 +57,9 @@ class PreCadastroFuncionarioView(APIView):
         matricula = data.get('matricula', '')
         telefone = data.get('telefone', '')
         tipo_servico = data.get('tipo_servico', '')
-        dias = data.get('diasDisponiveis', [])
-        horarios = data.get('horariosDisponiveis', [])
+        disponibilidades = data.get('disponibilidades', [])
+        local = data.get('local', None)
+        sala = data.get('sala', None)
 
         if tipo == 'profissional':
             obj, created = Profissional.objects.get_or_create(
@@ -89,16 +90,22 @@ class PreCadastroFuncionarioView(APIView):
         content_type = ContentType.objects.get_for_model(obj)
         Disponibilidade.objects.filter(content_type=content_type, object_id=obj.id).delete()
 
-        for dia_str in dias:
+        for disp in disponibilidades:
+            dia_str = disp.get('dia')
+            horarios = disp.get('horarios', [])
+
             dia = parse_date(dia_str)
             if not dia:
                 continue
+
             for horario in horarios:
                 Disponibilidade.objects.create(
                     content_type=content_type,
                     object_id=obj.id,
                     dia=dia,
-                    horario=horario
+                    horario=horario,
+                    local=local,
+                    sala=sala
                 )
 
         return Response({'detail': 'Pré-cadastro realizado com sucesso!'}, status=status.HTTP_201_CREATED)
@@ -209,7 +216,8 @@ class AgendamentosPorDataView(APIView):
 
         # Passo 4: Retornar os profissionais e horários disponíveis
         profissionais_disponiveis = [
-            {"profissional": disponibilidade.atendente.nome, "horario": disponibilidade.horario}
+            {"profissional": disponibilidade.atendente.nome, "horario": disponibilidade.horario, "sala": disponibilidade.sala,
+        "local": disponibilidade.local,}
             for disponibilidade in horarios_disponiveis
         ]
 
