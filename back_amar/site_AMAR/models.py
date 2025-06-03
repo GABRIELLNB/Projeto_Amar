@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
@@ -6,6 +6,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core.exceptions import ValidationError
 
+
+# Gerenciador personalizado para a criação de usuários e superusuários
 class UsuarioManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -27,6 +29,7 @@ class UsuarioManager(BaseUserManager):
         return self.create_user(email=email, password=password, **extra_fields)
 
 
+# Modelo customizado para representar os usuários do sistema
 class Usuario(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     nome = models.CharField(max_length=100)
@@ -44,6 +47,9 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+    
+    
+# Modelo que representa um profissional atendente, vinculado a um usuário
 class Profissional(models.Model):
     cpf = models.CharField(max_length=14, unique=True)
     usuario = models.OneToOneField(Usuario, on_delete=models.SET_NULL, null=True, blank=True)
@@ -62,6 +68,8 @@ class Profissional(models.Model):
             return f"{self.usuario.nome} ({self.cpf})"
         return f"(Sem usuário) {self.cpf}"
 
+
+# Modelo que representa um estagiário atendente, vinculado a um usuário
 class Estagiario(models.Model):
     cpf = models.CharField(max_length=14, unique=True)
     usuario = models.OneToOneField(Usuario, on_delete=models.SET_NULL, null=True, blank=True)
@@ -80,6 +88,8 @@ class Estagiario(models.Model):
             return f"{self.usuario.nome} ({self.cpf})"
         return f"(Sem usuário) {self.cpf}"
 
+
+# Modelo que representa a disponibilidade de um atendente (Profissional ou Estagiário)
 class Disponibilidade(models.Model):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
@@ -108,7 +118,7 @@ class Disponibilidade(models.Model):
     def __str__(self):
         return f'{self.atendente.nome} - {self.dia} ({self.horario}) {self.local}, {self.sala}'
 
-
+# Modelo que representa um agendamento feito por um usuário com um atendente (Profissional ou Estagiário)
 class Agendamento(models.Model):
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
@@ -123,12 +133,13 @@ class Agendamento(models.Model):
     criado_em = models.DateTimeField(auto_now_add=True)
 
     STATUS_CHOICES = [
-        ('pendente', 'Pendente'),  
+        ('realizado', 'Realizado'),  
         ('confirmado', 'Confirmado'),  
         ('cancelado', 'Cancelado'),
     ]
 
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='confirmado')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='Confirmado')
+    
 
     def clean(self):
         super().clean()
@@ -137,16 +148,19 @@ class Agendamento(models.Model):
         if self.content_type.model_class() not in [Profissional, Estagiario]:
             raise ValidationError("Agendamento só pode ser com Profissional ou Estagiário.")
 
-        # Verifica se o horário já está agendado para o atendente
-        if Agendamento.objects.filter(
+        # Verifica se o horário já está agendado para o atendente, excluindo o próprio registro em edição
+        agendamentos_duplicados = Agendamento.objects.filter(
             content_type=self.content_type,
             object_id=self.object_id,
             dia=self.dia,
             horario=self.horario,
             local=self.local,
             sala=self.sala
-            
-        ).exists():
+        )
+        if self.pk:
+            agendamentos_duplicados = agendamentos_duplicados.exclude(pk=self.pk)
+
+        if agendamentos_duplicados.exists():
             raise ValidationError("Este horário já está agendado para este atendente.")
 
         # Limitar 3 agendamentos por semana com atendentes diferentes
@@ -168,9 +182,26 @@ class Agendamento(models.Model):
         if atendente_atual not in atendentes_semana:
             if atendentes_semana.count() >= 3:
                 raise ValidationError("Você já atingiu o limite de 3 agendamentos com atendentes diferentes nesta semana.")
+            
     def save(self, *args, **kwargs):
-        self.full_clean()  # chama o clean() para validar antes de salvar
-        super().save(*args, **kwargs)            
+            self.full_clean()  # Executa clean()
+
+            # Concatena dia + horario e converte para datetime
+            try:
+                horario_obj = datetime.strptime(self.horario, "%H:%M").time()
+                data_hora = datetime.combine(self.dia, horario_obj)
+                data_hora = timezone.make_aware(data_hora)
+            except Exception as e:
+                print("Erro ao converter horário:", e)
+                data_hora = None
+
+            if data_hora and data_hora < timezone.now() and self.status == 'confirmado':
+                self.status = 'realizado'
+
+            super().save(*args, **kwargs)
+            
+            
+            
 '''
 class Forums(models.Model):
     imag_png = models.ImageField(upload_to='imagens/')

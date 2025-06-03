@@ -6,6 +6,9 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.response import Response
+from datetime import datetime
+from .models import Agendamento
 
 from .models import (
     Agendamento,
@@ -25,6 +28,7 @@ from .serializers import (
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import MyTokenObtainPairSerializer
 
+# View para autenticação personalizada usando JWT
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
@@ -34,7 +38,7 @@ def normalizar_cpf(cpf):
     return re.sub(r'\D', '', cpf)
 
 
-# CADASTRO
+# View para cadastro de usuários comuns (usuário normal)
 class CadastroView(APIView):
     permission_classes = [AllowAny]
 
@@ -46,6 +50,8 @@ class CadastroView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# View para pré-cadastro de funcionários (profissional ou estagiário)
+# Também cadastra suas disponibilidades para atendimento
 class PreCadastroFuncionarioView(APIView):
     permission_classes = [AllowAny]
 
@@ -112,25 +118,27 @@ class PreCadastroFuncionarioView(APIView):
 
 
 # LISTAGENS
+
+# View para listar todos os usuários comuns cadastrados
 class UsuarioListView(generics.ListAPIView):
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
     permission_classes = [AllowAny]
 
-
+# View para listar todos os profissionais cadastrados
 class ProfissionalListView(generics.ListAPIView):
     queryset = Profissional.objects.all()
     serializer_class = ProfissionalSerializer
     permission_classes = [AllowAny]
 
-
+# View para listar todos os estagiários cadastrados
 class EstagiarioListView(generics.ListAPIView):
     queryset = Estagiario.objects.all()
     serializer_class = EstagiarioSerializer
     permission_classes = [AllowAny]
 
 
-# DETALHES E EXCLUSÃO
+# View para detalhar e deletar um usuário comum pelo id (pk)
 class UsuarioDetailView(APIView):
     permission_classes = [AllowAny]
 
@@ -143,6 +151,7 @@ class UsuarioDetailView(APIView):
             return Response({'error': 'Usuário não encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
 
+# View para detalhar e deletar um profissional pelo id (pk)
 class ProfissionalDetailView(APIView):
     permission_classes = [AllowAny]
 
@@ -155,6 +164,7 @@ class ProfissionalDetailView(APIView):
             return Response({'error': 'Profissional não encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
 
+# View para detalhar e deletar um estagiário pelo id (pk)
 class EstagiarioDetailView(APIView):
     permission_classes = [AllowAny]
 
@@ -168,7 +178,7 @@ class EstagiarioDetailView(APIView):
 
 
 # AGENDAMENTO
-
+# View para listar e criar agendamentos com autenticação obrigatória
 class AgendamentoListCreateView(generics.ListCreateAPIView):
     queryset = Agendamento.objects.all()
     serializer_class = AgendamentoSerializer
@@ -177,20 +187,14 @@ class AgendamentoListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(usuario=self.request.user)
 
-
+# View para detalhar, atualizar e deletar agendamento com autenticação obrigatória
 class AgendamentoDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Agendamento.objects.all()
     serializer_class = AgendamentoSerializer
     permission_classes = [IsAuthenticated]
 
 
-# views.py
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from django.utils.dateparse import parse_date
-from datetime import datetime
-from .models import Agendamento
-
+# View para listar horários disponíveis por data (filtragem e exclusão de horários já agendados)
 class AgendamentosPorDataView(APIView):
     def get(self, request, data):
         # Convertendo a data para o formato DateTime
@@ -225,8 +229,31 @@ class AgendamentosPorDataView(APIView):
             return Response({"message": "Nenhum horário disponível para esta data."}, status=404)
 
         return Response(profissionais_disponiveis)
+    
+    
+# View para cancelar um agendamento específico (somente usuários autenticados)
+class CancelarAgendamentoView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            agendamento = Agendamento.objects.get(pk=pk)
+        except Agendamento.DoesNotExist:
+            return Response({"error": "Agendamento não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        if agendamento.status == "cancelado":
+            return Response({"detail": "Agendamento já está cancelado."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Se quiser, pode adicionar verificação se o usuário tem permissão para cancelar aqui
+        # Exemplo: if agendamento.usuario != request.user: return 403 forbidden
+
+        agendamento.status = "cancelado"
+        agendamento.save()
+
+        return Response({"detail": "Agendamento cancelado com sucesso."}, status=status.HTTP_200_OK)
 
 
+# View para listar disponibilidades livres em uma data, excluindo horários já ocupados por agendamentos
 class DisponibilidadesPorDataView(APIView):
     def get(self, request, data):
         try:

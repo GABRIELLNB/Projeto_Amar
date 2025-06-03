@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import (
     CadastroView,
+    CancelarAgendamentoView,
     DisponibilidadesPorDataView,
     PreCadastroFuncionarioView,
     UsuarioListView, UsuarioDetailView,
@@ -32,6 +33,7 @@ urlpatterns = [
     path('api/agendamentos/', AgendamentoListCreateView.as_view(), name='agendamento-list-create'),
     path('api/agendamentos/<int:pk>/', AgendamentoDetailView.as_view(), name='agendamento-detail'),
     path('api/agendamentos-por-data/<str:data>/', AgendamentosPorDataView.as_view(), name='agendamentos-por-data'),
+    path('api/agendamentos/<int:pk>/cancelar/', CancelarAgendamentoView.as_view(), name='cancelar-agendamento'),
    
     path('api/disponibilidades-por-data/<str:data>/', DisponibilidadesPorDataView.as_view(), name='horarios-disponiveis-por-data'),
 

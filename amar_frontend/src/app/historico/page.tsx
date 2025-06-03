@@ -4,58 +4,88 @@ import { Button } from '@/components/button'
 import { IconButton } from '@/components/icon-button'
 import SidebarMenu from '@/components/sidebar-menu'
 import { ArrowLeft, CircleX, FileClock } from 'lucide-react'
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
-const consultas = [
-  {
-    hora: '09:30',
-    data: '30/05/2025',
-    paciente: 'Paulo',
-    servico: 'Psicóloga',
-    local: 'Unijorge',
-    sala: '01',
-    profissional: 'Dr. Ariela',
-    status: 'Pendente',
-  },
-  {
-    hora: '14:00',
-    data: '19/05/2025',
-    paciente: 'Paulo',
-    servico: 'Nutrição',
-    local: 'Unijorge',
-    sala: '01',
-    profissional: 'Dr. Estela',
-    status: 'Concluído',
-  },
-  {
-    hora: '15:30',
-    data: '12/05/2025',
-    paciente: 'Paulo',
-    servico: 'Nutrição',
-    local: 'Unijorge',
-    sala: '01',
-    profissional: 'Dr. Estela',
-    status: 'Cancelado',
-  },
-]
-
-const statusColors: Record<string, string> = {
-  Pendente: 'bg-yellow-400 text-black',
-  Concluído: 'bg-green-500 text-white',
-  Cancelado: 'bg-red-500 text-white',
-}
+type Agendamento = {
+  id: number;
+  horario: string;
+  object_id: number;
+  atendente_nome: string;
+  servico: string;
+  sala: string;
+  local: string;
+  status: 'realizado' | 'confirmado' | 'cancelado';
+  dia: string;
+};
 
 export default function Histórico() {
-  const [isExit, setIsExit] = useState(false)
-  const [consultaSelecionada, setConsultaSelecionada] = useState(null)
+  const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+  const [isExit, setIsExit] = useState(false);
+  const [consultaSelecionada, setConsultaSelecionada] = useState<Agendamento | null>(null);
+
+  const statusColors: Record<string, string> = {
+    confirmado: 'bg-yellow-400 text-black',
+    realizado: 'bg-green-500 text-white',
+    cancelado: 'bg-red text-white',
+  };
+
+useEffect(() => {
+  const token = localStorage.getItem("token");
+  console.log("Token:", token);
+
+  if (token) {
+    fetch("http://localhost:8000/api/agendamentos/", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then(res => res.json())
+      .then(data => {
+        console.log("API retornou:", data);
+        const agendamentosFiltrados = data.filter((ag: Agendamento) =>
+         ['confirmado', 'realizado', 'cancelado'].includes(ag.status.toLowerCase())
+        );
+        setAgendamentos(agendamentosFiltrados);
+      })
+      .catch(error => {
+        console.error("Erro ao buscar agendamentos:", error);
+      });
+  }
+}, []);
+
+
+const cancelarAgendamento = async (id: number) => {
+  const token = localStorage.getItem("token");
+
+  if (!token) return;
+
+  try {
+    const response = await fetch(`http://localhost:8000/api/agendamentos/${id}/cancelar/`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (response.ok) {
+      setAgendamentos(prev =>
+        prev.map(ag => (ag.id === id ? { ...ag, status: "cancelado" } : ag))
+      );
+      setIsExit(false);
+    } else {
+      console.error("Erro ao cancelar:", await response.text());
+    }
+  } catch (err) {
+    console.error("Erro ao cancelar consulta:", err);
+  }
+};
 
   return (
     <>
-      <SidebarMenu userName="Paulo Avelino" activeItem="Histórico"/>
+      <SidebarMenu userName="Paulo Avelino" activeItem="Histórico" />
 
       <div className="ml-[360px] p-6 relative">
         <div className="gap-6 mt-15 px-6">
-          {/* Título */}
           <div className="flex items-center gap-2 mb-6 ml-5">
             <h1 className="flex items-center gap-2 text-3xl font-semibold text-pink4000 whitespace-nowrap">
               <FileClock className="w-8 h-8" />
@@ -63,24 +93,23 @@ export default function Histórico() {
             </h1>
           </div>
 
-          {/* Cards de agendamento */}
           <div className="flex flex-col space-y-4 ml-5 gap-0 justify-start">
-            {consultas.map((consulta, i) => (
+            {agendamentos.map((consulta, i) => (
               <div
                 key={i}
-                className="bg-pink3000 rounded-xl shadow-md p-6 w-full max-w-full overflow-auto max-h-screen mt-10"
+                className="bg-pink3000 rounded-xl shadow-md p-6 w-full max-w-full overflow-auto mt-10"
               >
                 <div className="flex items-center justify-between text-lg font-bold text-pink4000 mb-3">
                   <div className="flex-1">
-                    <span>{consulta.hora}</span>
+                    <span>{consulta.horario}</span>
                   </div>
 
-                  {consulta.status === 'Pendente' && (
+                  {consulta.status === 'confirmado' && (
                     <IconButton
-                      className=" p-1.5 bg-pink3000 text-red rounded-md cursor-pointer transition-colors duration-300  hover:text-pink4000"
+                      className="p-1.5 bg-pink3000 text-red rounded-md cursor-pointer transition-colors duration-300 hover:text-pink4000"
                       onClick={() => {
-                        setConsultaSelecionada(consulta)
-                        setIsExit(true)
+                        setConsultaSelecionada(consulta);
+                        setIsExit(true);
                       }}
                     >
                       <CircleX size={25} />
@@ -88,39 +117,31 @@ export default function Histórico() {
                   )}
                 </div>
 
-                <div
-                  key={i}
-                  className="bg-pink1000 rounded-xl shadow-md p-6 w-full max-w-full overflow-auto max-h-screen"
-                >
-                  {/* Hora destacada no topo */}
-
-                  {/* Informações da consulta */}
+                <div className="bg-pink1000 rounded-xl shadow-md p-6 w-full max-w-full overflow-auto">
                   <table className="w-full text-sm text-center border border-pink1000">
                     <thead>
-                      <tr className="bg-pink1000 text-pink4000 font-semibold">
-                        <th className="px-2 py-2">Data</th>
-                        <th className="px-2 py-2">Paciente</th>
-                        <th className="px-2 py-2">Serviço</th>
-                        <th className="px-2 py-2">Local</th>
-                        <th className="px-2 py-2">Sala</th>
-                        <th className="px-2 py-2">Profissional</th>
-                        <th className="px-2 py-2">Status</th>
+                      <tr className="bg-pink2000 text-pink1000 border border-pink3000 text-center">
+                        <th className="px-2">Data</th>
+                        <th className="p-2">Hora</th>
+                        <th className="p-2">Nome</th>
+                        <th className="p-2">Serviço</th>
+                        <th className="p-2">Local</th>
+                        <th className="p-2">Sala</th>
+                        <th className="p-2">Status</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr className="border-t border-pink3000">
-                        <td className="px-2 py-2">{consulta.data}</td>
-                        <td className="px-2 py-2">{consulta.paciente}</td>
-                        <td className="px-2 py-2">{consulta.servico}</td>
-                        <td className="px-2 py-2">{consulta.local}</td>
-                        <td className="px-2 py-2">{consulta.sala}</td>
-                        <td className="px-2 py-2">{consulta.profissional}</td>
+                      <tr key={consulta.id}>
+                        <td className="p-2">{consulta.dia}</td>
+                        <td className="p-2">{consulta.horario}</td>
+                        <td className="p-2">{consulta.atendente_nome}</td>
+                        <td className="p-2">{consulta.servico}</td>
+                        <td className="p-2">{consulta.local}</td>
+                        <td className="p-2">{consulta.sala}</td>
                         <td className="px-2 py-2">
-                          <span
-                            className={`px-2 py-1 rounded ${statusColors[consulta.status]}`}
-                          >
-                            {consulta.status}
-                          </span>
+                          <span className={`px-2 py-1 rounded ${statusColors[consulta.status.toLowerCase()]}`}>
+  {consulta.status}
+</span>
                         </td>
                       </tr>
                     </tbody>
@@ -131,7 +152,8 @@ export default function Histórico() {
           </div>
         </div>
       </div>
-      {isExit && (
+
+      {isExit && consultaSelecionada && (
         <>
           <div
             role="button"
@@ -139,7 +161,7 @@ export default function Histórico() {
             onClick={() => setIsExit(false)}
             onKeyDown={e => {
               if (e.key === 'Enter' || e.key === ' ') {
-                setIsExit(false)
+                setIsExit(false);
               }
             }}
             className="fixed inset-0 z-40 backdrop-blur-sm"
@@ -159,28 +181,21 @@ export default function Histórico() {
                 Cancelar Consulta
               </h2>
               <div className="flex items-center justify-between mb-8">
-                {consultaSelecionada && (
-                  <span className="text-pink4000 text-sm">
-                    Cancelar consulta de {consultaSelecionada.profissional} em{' '}
-                    {consultaSelecionada.data} às {consultaSelecionada.hora}?
-                  </span>
-                )}
+                <span className="text-pink4000 text-sm">
+                  Cancelar consulta de {consultaSelecionada.object_id} em{' '}
+                  {consultaSelecionada.dia} às {consultaSelecionada.horario}?
+                </span>
               </div>
-
-              <div className="mb-2">
-                <div>
-                  <Button
-                    onClick={() => setIsExit(false)}
-                    className="bg-red text-pink1000 border border-red px-4 py-2 rounded-xl w-full transition-colors duration-300 hover:bg-pink3000 hover:text-red cursor-pointer"
-                  >
-                    Cancelar consulta
-                  </Button>
-                </div>
-              </div>
+              <Button
+                onClick={() => cancelarAgendamento(consultaSelecionada.id)}
+                className="bg-red text-pink1000 border border-red px-4 py-2 rounded-xl w-full transition-colors duration-300 hover:bg-pink3000 hover:text-red cursor-pointer"
+              >
+                Cancelar consulta
+              </Button>
             </div>
           </div>
         </>
       )}
     </>
-  )
+  );
 }

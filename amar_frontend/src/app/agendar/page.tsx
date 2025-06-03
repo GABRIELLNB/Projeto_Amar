@@ -15,7 +15,6 @@ type HorarioDisponivel = {
   horario: string;
   object_id: number;
   atendente_nome: string;
-  tipo_atendente: string;
   servico: string 
   sala:string
   local:string
@@ -44,23 +43,6 @@ const marcarHorario = async (horarioId: number) => {
     return;
   }
 
-  const tipoAtendente = horarioSelecionado.tipo_atendente.toLowerCase();
-  console.log("tipoAtendente recebido:", tipoAtendente);
-
-  const contentTypeMap: Record<string, number> = {
-    profissional: 10,
-    estagiario: 9,
-  };
-
-  const contentType = contentTypeMap[tipoAtendente];
-
-  if (!contentType) {
-    alert("Tipo de atendente desconhecido.");
-    return;
-  }
-  
-
-
   try {
     const res = await fetch("http://localhost:8000/api/agendamentos/", {
       method: "POST",
@@ -69,10 +51,11 @@ const marcarHorario = async (horarioId: number) => {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        content_type: contentType,
         object_id: horarioSelecionado.object_id,
         dia: format(selectedDate, "yyyy-MM-dd"),
         horario: horarioSelecionado.horario,
+        local: horarioSelecionado.local,
+        sala: horarioSelecionado.sala,
       }),
     });
 
@@ -279,7 +262,6 @@ const marcarHorario = async (horarioId: number) => {
                 <tr className="bg-pink2000 text-pink1000 border border-pink3000 text-center">
                   <th className="p-2">Hora</th>
                   <th className="p-2">Nome</th>
-                  <th className="p-2">Tipo Atendente</th>
                   <th className="p-2">Serviço</th>
                   <th className="p-2">Local</th>
                   <th className="p-2">Sala</th>
@@ -292,7 +274,6 @@ const marcarHorario = async (horarioId: number) => {
                     <tr key={item.id}>
                       <td className="p-2">{item.horario}</td>
                       <td className="p-2">{item.atendente_nome}</td>
-                      <td className="p-2">{item.tipo_atendente}</td>
                       <td className="p-2">{item.servico}</td>
                       <td className="p-2">{item.local}</td>
                       <td className="p-2">{item.sala}</td>

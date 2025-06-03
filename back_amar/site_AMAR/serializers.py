@@ -2,9 +2,16 @@ from django.apps import apps
 from rest_framework import serializers
 from .models import Agendamento, Estagiario, Profissional, Usuario
 from django.contrib.auth.hashers import make_password
-
+from rest_framework import serializers
+from django.core.exceptions import ValidationError as DjangoValidationError
+from rest_framework.exceptions import ValidationError as DRFValidationError
+from datetime import date
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from .models import Disponibilidade
 
+
+# Customiza o serializer do JWT para incluir campos adicionais no token,
+# como se o usuário é superuser e o tipo do usuário (profissional, estagiário ou usuário comum).
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
@@ -24,6 +31,8 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 
+# Serializer para o modelo Usuario, incluindo a lógica para
+# criação do usuário com senha hashada (não salva senha em texto puro).
 class UsuarioSerializer(serializers.ModelSerializer):
     senha = serializers.CharField(write_only=True)
 
@@ -37,7 +46,10 @@ class UsuarioSerializer(serializers.ModelSerializer):
         usuario.set_password(senha)  # usa o setter para hash
         usuario.save()
         return usuario
-    
+
+
+# Serializer para o modelo Profissional, expondo campos do profissional
+# e o e-mail relacionado ao usuário correspondente (via relação one-to-one).   
 class ProfissionalSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='usuario.email', read_only=True)
 
@@ -45,35 +57,57 @@ class ProfissionalSerializer(serializers.ModelSerializer):
         model = Profissional
         fields = ['id', 'cpf', 'nome', 'matricula', 'telefone', 'tipo_servico', 'email']
 
+
+# Serializer para o modelo Estagiario, similar ao ProfissionalSerializer,
+# incluindo o e-mail via relação com o modelo Usuario.
 class EstagiarioSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='usuario.email', read_only=True)
     class Meta:
         model = Estagiario
         fields = ['id', 'cpf', 'nome', 'matricula', 'telefone', 'tipo_servico', 'email']
 
-from rest_framework import serializers
 
-# serializers.py
-from rest_framework import serializers
-from django.contrib.contenttypes.models import ContentType
-from .models import Agendamento
-
-# serializers.py
-from rest_framework import serializers
-from django.contrib.contenttypes.models import ContentType
-from .models import Agendamento
-
-from rest_framework import serializers
-from django.core.exceptions import ValidationError as DjangoValidationError
-from rest_framework.exceptions import ValidationError as DRFValidationError
-
+# Serializer para o modelo Agendamento, responsável por validar,
+# criar e representar agendamentos, incluindo lógica para atualizar
+# status baseado na data atual e impedir conflitos de horários.
 class AgendamentoSerializer(serializers.ModelSerializer):
+    servico = serializers.SerializerMethodField()
+    atendente_nome = serializers.SerializerMethodField()
+
     class Meta:
         model = Agendamento
-        fields = '__all__'
-        read_only_fields = ('usuario', 'criado_em')
+        fields = [
+            'id',
+            'usuario',
+            'dia',
+            'horario',
+            'local',
+            'sala',
+            'status',
+            'servico',
+            'atendente_nome',
+        ]
+    
+    def to_representation(self, instance):
+        # Atualiza status para 'realizado' se a data já passou
+        if instance.dia < date.today() and instance.status in ['pendente', 'confirmado']:
+            instance.status = 'realizado'
+        return super().to_representation(instance)
+    
+    def get_servico(self, obj):
+        if obj.atendente:
+            return obj.atendente.tipo_servico
+        return None
+
+    def get_atendente_nome(self, obj):
+        try:
+            return obj.atendente.nome
+        except AttributeError:
+            return None
 
     def validate(self, data):
+        # Validação para garantir que o agendamento só seja feito com
+        # Profissional ou Estagiário e que não haja conflito de horário.
         content_type = data.get('content_type')
         object_id = data.get('object_id')
         dia = data.get('dia')
@@ -104,13 +138,17 @@ class AgendamentoSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
+        # Cria o agendamento associando ao usuário autenticado
         usuario = self.context['request'].user
         validated_data.pop('usuario', None)
+        validated_data['status'] = 'confirmado'  
         return Agendamento.objects.create(usuario=usuario, **validated_data)
 
 
-from .models import Disponibilidade
 
+# Serializer para o modelo Disponibilidade, que expõe a disponibilidade
+# dos atendentes (profissionais ou estagiários), incluindo nome, tipo,
+# serviço e detalhes do horário e local.
 class DisponibilidadeSerializer(serializers.ModelSerializer):
     atendente_nome = serializers.CharField(source='atendente.nome', read_only=True)
     tipo_atendente = serializers.CharField(source='content_type.model', read_only=True)
@@ -125,6 +163,8 @@ class DisponibilidadeSerializer(serializers.ModelSerializer):
         if obj.atendente:
             return obj.atendente.tipo_servico
         return None
+    
+    
 '''
 class LoginSerializer(serializers.Serializer):
     cpf = serializers.CharField()
