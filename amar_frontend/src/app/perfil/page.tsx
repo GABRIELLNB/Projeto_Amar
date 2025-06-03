@@ -23,14 +23,14 @@ export default function EditarPerfil() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-  const [userType, setUserType] = useState<"profissional" | "estagiario" | "usuario">("usuario");
+  const [userType, setUserType] = useState<"profissional" | "estagiario" | "outro">("outro");
   const [userName, setUserName] = useState<string>("");
 
   useEffect(() => {
     const storedUserType = localStorage.getItem("user_type") as
       | "profissional"
       | "estagiario"
-      | "usuario";
+      | "outro";
     const storedUserName = localStorage.getItem("user_name") || "";
 
     if (storedUserType) setUserType(storedUserType);

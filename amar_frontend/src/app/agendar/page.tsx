@@ -13,12 +13,14 @@ import { useRouter } from "next/navigation";
 
 type HorarioDisponivel = {
   id: number;
+  dia: string;
   horario: string;
   object_id: number;
   atendente_nome: string;
   servico: string;
   sala: string;
   local: string;
+  tipo_atendente: string;
   // outros campos que a API enviar, se houver
 };
 
@@ -26,7 +28,6 @@ export default function Agendar() {
   const router = useRouter();
   const [agendados, setAgendados] = useState<number[]>([]);
 
-  
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [horariosDisponiveis, setHorariosDisponiveis] = useState<
     HorarioDisponivel[]
@@ -45,6 +46,28 @@ export default function Agendar() {
       return;
     }
 
+    const tipoAtendente = horarioSelecionado.tipo_atendente.toLowerCase();
+    console.log("tipoAtendente recebido:", tipoAtendente);
+
+    const contentTypeMap: Record<string, number> = {
+      profissional: 10,
+      estagiario: 9,
+    };
+
+    const contentType = contentTypeMap[tipoAtendente];
+
+    if (!contentType) {
+      alert("Tipo de atendente desconhecido.");
+      return;
+    }
+
+    console.log("Usuário ID:", localStorage.getItem("usuario_id"));
+    const usuarioId = localStorage.getItem("usuario_id");
+    if (!usuarioId) {
+      alert("Usuário não autenticado");
+      return;
+    }
+
     try {
       const res = await fetch("http://localhost:8000/api/agendamentos/", {
         method: "POST",
@@ -53,28 +76,39 @@ export default function Agendar() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
+          content_type: contentType,
           object_id: horarioSelecionado.object_id,
           dia: format(selectedDate, "yyyy-MM-dd"),
           horario: horarioSelecionado.horario,
           local: horarioSelecionado.local,
           sala: horarioSelecionado.sala,
+          usuario: Number.parseInt(usuarioId),
         }),
       });
 
       if (!res.ok) {
-        // tenta pegar a mensagem de erro detalhada do backend
-        const errorData = await res.json();
-        // exibe mensagem detalhada, se existir, ou o status
-        const mensagemErro =
-          errorData?.detail ||
-          errorData?.non_field_errors?.join(", ") ||
-          JSON.stringify(errorData) ||
-          `Erro ao agendar: ${res.status}`;
+      const errorData = await res.json();
+      const mensagemErro =
+        errorData?.detail ||
+        errorData?.non_field_errors?.join(", ") ||
+        JSON.stringify(errorData) ||
+        `Erro ao agendar: ${res.status}`;
 
-        throw new Error(mensagemErro);
-      }
+      throw new Error(mensagemErro);
+    }
 
-      setAgendados((prev) => [...prev, horarioId]);
+    // Aqui você pode marcar o horário como "agendado" — você precisa de um estado para isso
+    setAgendados((prev) => [...prev, horarioId]);
+
+    // Espera 3 segundos para o usuário ver o "Marcado"
+    setTimeout(async () => {
+      // Remove o horário agendado da lista disponível
+      setHorariosDisponiveis((prev) =>
+        prev.filter((item) => item.id !== horarioId)
+      );
+      // Remove o horário do marcado (se quiser)
+      setAgendados((prev) => prev.filter((id) => id !== horarioId));
+      
 
       // Atualiza horários disponíveis
       const dataFormatada = format(selectedDate, "yyyy-MM-dd");
@@ -90,6 +124,7 @@ export default function Agendar() {
       if (!horariosRes.ok) throw new Error(`Erro ${horariosRes.status}`);
       const dados = await horariosRes.json();
       setHorariosDisponiveis(dados);
+       }, 3000);
     } catch (error: any) {
       console.error(error);
       alert(error.message || "Erro ao marcar o horário.");
@@ -99,6 +134,7 @@ export default function Agendar() {
   useEffect(() => {
     if (!selectedDate) return;
     const token = localStorage.getItem("token");
+
     const dataFormatada = format(selectedDate, "yyyy-MM-dd");
 
     fetch(
@@ -159,7 +195,10 @@ export default function Agendar() {
       >
         <div className="bg-pink2000 w-full h-20 fixed top-0 left-0 flex items-center px-4 z-50">
           <div className="flex items-center gap-2">
-            <IconButton className="bg-pink2000 text-pink1000 p-2 rounded-md hover:text-pink4000 hover:bg-pink2000 cursor-pointer">
+            <IconButton
+              onClick={() => router.push("/menu")}
+              className="bg-pink2000 text-pink1000 p-2 rounded-md hover:text-pink4000 hover:bg-pink2000 cursor-pointer"
+            >
               <ArrowLeft />
             </IconButton>
             <h1 className="text-pink1000 text-2xl font-semibold">
@@ -283,19 +322,19 @@ export default function Agendar() {
                       <td className="p-2">{item.sala}</td>
                       <td className="p-2">
                         {agendados.includes(item.id) ? (
-                          <button
+                          <Button
                             disabled
                             className="bg-green-400 text-white px-3 py-1 rounded cursor-not-allowed opacity-70"
                           >
                             Marcado
-                          </button>
+                          </Button>
                         ) : (
-                          <button
+                          <Button
                             onClick={() => marcarHorario(item.id)}
                             className="bg-pink2000 hover:bg-pink1000 hover:text-pink2000 text-pink1000 px-3 py-1 rounded cursor-pointer"
                           >
                             Marcar
-                          </button>
+                          </Button>
                         )}
                       </td>
                     </tr>

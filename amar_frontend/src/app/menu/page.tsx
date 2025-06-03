@@ -10,11 +10,12 @@ import { MessageSquare } from 'lucide-react'
 
 export default function Menu() {
   const router = useRouter()
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const [data, setData] = useState<any[]>([]) // Supondo que você vai buscar alguma lista de dados
   const [loading, setLoading] = useState(true)
 
   const [userType, setUserType] = useState<"profissional" | "estagiario" | "outro">("outro");
-    const [userName, setUserName] = useState<string>("");
+  const [userName, setUserName] = useState<string>("");
     
   useEffect(() => {
       const storedUserType = localStorage.getItem("user_type") as
@@ -73,6 +74,7 @@ export default function Menu() {
                   ? <p> </p>
                   : data.map((item, i) => (
                       <div
+                        // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
                         key={i}
                         className="bg-pink1000 rounded-xl p-6 cursor-pointer transition-colors hover:bg-pink1000"
                       >

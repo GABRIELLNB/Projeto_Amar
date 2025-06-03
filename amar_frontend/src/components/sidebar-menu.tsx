@@ -114,7 +114,8 @@ export default function SidebarMenu({ userName, activeItem: propActiveItem, user
           </div>
 
           {menuItems.map((item, index) => (
-            <div key={index} className="flex justify-center mb-2">
+            // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+<div key={index} className="flex justify-center mb-2">
               <Button
                 className={`flex justify-between items-center px-5 h-12 font-semibold rounded-xl w-full cursor-pointer transition-colors duration-300 ${
                   activeSidebarItem === item.label

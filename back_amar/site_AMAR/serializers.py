@@ -15,10 +15,12 @@ from .models import Disponibilidade
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
-        
-        data['is_superuser'] = self.user.is_superuser
-
         user = self.user
+        data['is_superuser'] = self.user.is_superuser
+        
+
+      
+        data['id'] = user.id
         user_type = 'usuario'  # padrão
 
         if hasattr(user, 'profissional'):
@@ -72,44 +74,30 @@ class EstagiarioSerializer(serializers.ModelSerializer):
 # Serializer para o modelo Agendamento, responsável por validar,
 # criar e representar agendamentos, incluindo lógica para atualizar
 # status baseado na data atual e impedir conflitos de horários.
+from django.contrib.contenttypes.models import ContentType
+from rest_framework import serializers
+
 class AgendamentoSerializer(serializers.ModelSerializer):
-    servico = serializers.SerializerMethodField()
-    atendente_nome = serializers.SerializerMethodField()
+    content_type = serializers.PrimaryKeyRelatedField(queryset=ContentType.objects.all())
+    object_id = serializers.IntegerField()
 
     class Meta:
         model = Agendamento
         fields = [
             'id',
             'usuario',
+            'content_type',
+            'object_id',
             'dia',
             'horario',
             'local',
             'sala',
             'status',
-            'servico',
-            'atendente_nome',
+            
         ]
-    
-    def to_representation(self, instance):
-        # Atualiza status para 'realizado' se a data já passou
-        if instance.dia < date.today() and instance.status in ['pendente', 'confirmado']:
-            instance.status = 'realizado'
-        return super().to_representation(instance)
-    
-    def get_servico(self, obj):
-        if obj.atendente:
-            return obj.atendente.tipo_servico
-        return None
-
-    def get_atendente_nome(self, obj):
-        try:
-            return obj.atendente.nome
-        except AttributeError:
-            return None
+        read_only_fields = ['status']
 
     def validate(self, data):
-        # Validação para garantir que o agendamento só seja feito com
-        # Profissional ou Estagiário e que não haja conflito de horário.
         content_type = data.get('content_type')
         object_id = data.get('object_id')
         dia = data.get('dia')
@@ -118,14 +106,13 @@ class AgendamentoSerializer(serializers.ModelSerializer):
         sala = data.get('sala')
 
         if not all([content_type, object_id, dia, horario]):
-            raise DRFValidationError("Campos content_type, object_id, dia e horario são obrigatórios.")
+            raise serializers.ValidationError("Campos content_type, object_id, dia e horario são obrigatórios.")
 
-        model_class = content_type.model_class()
         profissional_class = apps.get_model('site_AMAR', 'Profissional')
         estagiario_class = apps.get_model('site_AMAR', 'Estagiario')
 
-        if model_class not in [profissional_class, estagiario_class]:
-            raise DRFValidationError("Agendamento só pode ser com Profissional ou Estagiário.")
+        if content_type.model_class() not in [profissional_class, estagiario_class]:
+            raise serializers.ValidationError("Agendamento só pode ser com Profissional ou Estagiário.")
 
         if Agendamento.objects.filter(
             content_type=content_type,
@@ -135,16 +122,16 @@ class AgendamentoSerializer(serializers.ModelSerializer):
             local=local,
             sala=sala
         ).exists():
-            raise DRFValidationError("Este horário já está agendado para este atendente.")
+            raise serializers.ValidationError("Este horário já está agendado para este atendente.")
 
         return data
 
     def create(self, validated_data):
-        # Cria o agendamento associando ao usuário autenticado
         usuario = self.context['request'].user
         validated_data.pop('usuario', None)
-        validated_data['status'] = 'confirmado'  
+        validated_data['status'] = 'confirmado'
         return Agendamento.objects.create(usuario=usuario, **validated_data)
+
 
 
 
