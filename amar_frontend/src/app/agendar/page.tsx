@@ -9,19 +9,21 @@ import { ArrowLeft, CalendarCheck2, History } from "lucide-react";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 
 import { format } from "date-fns";
+import { useRouter } from "next/navigation";
 
 type HorarioDisponivel = {
   id: number;
   horario: string;
   object_id: number;
   atendente_nome: string;
-  servico: string 
-  sala:string
-  local:string
+  servico: string;
+  sala: string;
+  local: string;
   // outros campos que a API enviar, se houver
 };
 
 export default function Agendar() {
+  const router = useRouter();
   const [agendados, setAgendados] = useState<number[]>([]);
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -29,71 +31,69 @@ export default function Agendar() {
     HorarioDisponivel[]
   >([]);
 
-const marcarHorario = async (horarioId: number) => {
-  console.log("horarioId recebido:", horarioId);
-  const token = localStorage.getItem("token");
+  const marcarHorario = async (horarioId: number) => {
+    console.log("horarioId recebido:", horarioId);
+    const token = localStorage.getItem("token");
 
-  const horarioSelecionado = horariosDisponiveis.find(
-    (item) => item.id === horarioId
-
-  );
-
-  if (!horarioSelecionado || !selectedDate) {
-    alert("Data ou horário inválido.");
-    return;
-  }
-
-  try {
-    const res = await fetch("http://localhost:8000/api/agendamentos/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        object_id: horarioSelecionado.object_id,
-        dia: format(selectedDate, "yyyy-MM-dd"),
-        horario: horarioSelecionado.horario,
-        local: horarioSelecionado.local,
-        sala: horarioSelecionado.sala,
-      }),
-    });
-
-    if (!res.ok) {
-      // tenta pegar a mensagem de erro detalhada do backend
-      const errorData = await res.json();
-      // exibe mensagem detalhada, se existir, ou o status
-      const mensagemErro =
-        errorData?.detail ||
-        errorData?.non_field_errors?.join(", ") ||
-        JSON.stringify(errorData) ||
-        `Erro ao agendar: ${res.status}`;
-
-      throw new Error(mensagemErro);
-    }
-
-    setAgendados((prev) => [...prev, horarioId]);
-
-    // Atualiza horários disponíveis
-    const dataFormatada = format(selectedDate, "yyyy-MM-dd");
-    const horariosRes = await fetch(
-      `http://localhost:8000/api/disponibilidades-por-data/${dataFormatada}/`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
+    const horarioSelecionado = horariosDisponiveis.find(
+      (item) => item.id === horarioId
     );
 
-    if (!horariosRes.ok) throw new Error(`Erro ${horariosRes.status}`);
-    const dados = await horariosRes.json();
-    setHorariosDisponiveis(dados);
-  } catch (error: any) {
-    console.error(error);
-    alert(error.message || "Erro ao marcar o horário.");
-  }
-};
+    if (!horarioSelecionado || !selectedDate) {
+      alert("Data ou horário inválido.");
+      return;
+    }
 
+    try {
+      const res = await fetch("http://localhost:8000/api/agendamentos/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          object_id: horarioSelecionado.object_id,
+          dia: format(selectedDate, "yyyy-MM-dd"),
+          horario: horarioSelecionado.horario,
+          local: horarioSelecionado.local,
+          sala: horarioSelecionado.sala,
+        }),
+      });
+
+      if (!res.ok) {
+        // tenta pegar a mensagem de erro detalhada do backend
+        const errorData = await res.json();
+        // exibe mensagem detalhada, se existir, ou o status
+        const mensagemErro =
+          errorData?.detail ||
+          errorData?.non_field_errors?.join(", ") ||
+          JSON.stringify(errorData) ||
+          `Erro ao agendar: ${res.status}`;
+
+        throw new Error(mensagemErro);
+      }
+
+      setAgendados((prev) => [...prev, horarioId]);
+
+      // Atualiza horários disponíveis
+      const dataFormatada = format(selectedDate, "yyyy-MM-dd");
+      const horariosRes = await fetch(
+        `http://localhost:8000/api/disponibilidades-por-data/${dataFormatada}/`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!horariosRes.ok) throw new Error(`Erro ${horariosRes.status}`);
+      const dados = await horariosRes.json();
+      setHorariosDisponiveis(dados);
+    } catch (error: any) {
+      console.error(error);
+      alert(error.message || "Erro ao marcar o horário.");
+    }
+  };
 
   useEffect(() => {
     if (!selectedDate) return;
@@ -239,7 +239,10 @@ const marcarHorario = async (horarioId: number) => {
                 <ButtonIcon className="text-pink4000 w-7 ">
                   <History />
                 </ButtonIcon>
-                <ButtonField className="flex-1 text-pink4000 hover:text-pink1000 transition-colors duration-300">
+                <ButtonField
+                  onClick={() => router.push("/historico")}
+                  className="flex-1 text-pink4000 hover:text-pink1000 transition-colors duration-300"
+                >
                   Histórico de Agendamento
                 </ButtonField>
               </Button>
