@@ -24,7 +24,7 @@ import {
   UserLock,
   UserRoundPen,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function Configuracoes() {
   const [showPassword, setShowPassword] = useState(false)
@@ -39,9 +39,26 @@ export default function Configuracoes() {
     navigator.clipboard.writeText(text)
   }
 
+  const [userType, setUserType] = useState<"profissional" | "estagiario" | "outro">("outro");
+  const [userName, setUserName] = useState<string>("");
+
+  useEffect(() => {
+    const storedUserType = localStorage.getItem("user_type") as
+      | "profissional"
+      | "estagiario"
+      | "outro"
+      | null;
+    const storedUserName = localStorage.getItem("user_name") || "";
+
+    if (storedUserType) setUserType(storedUserType);
+    setUserName(storedUserName);
+  }, []);
+
+  
   return (
     <div>
-      <SidebarMenu userName="Paulo Avelino" activeItem="Configurações"/>
+      <SidebarMenu userType={userType}
+        userName={userName} activeItem="Configurações"/>
 
       <div className="ml-[360px] p-6 relative">
         <div className="gap-6 mt-[-50] px-6">

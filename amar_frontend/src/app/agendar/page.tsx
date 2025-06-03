@@ -26,6 +26,7 @@ export default function Agendar() {
   const router = useRouter();
   const [agendados, setAgendados] = useState<number[]>([]);
 
+  
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [horariosDisponiveis, setHorariosDisponiveis] = useState<
     HorarioDisponivel[]

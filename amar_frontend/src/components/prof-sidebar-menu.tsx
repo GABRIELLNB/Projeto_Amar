@@ -1,4 +1,3 @@
-"use client";
 import { Button, ButtonField, ButtonIcon } from "@/components/button";
 import { IconButton } from "@/components/icon-button";
 import { InputField, InputRoot } from "@/components/input";
@@ -18,18 +17,36 @@ import React, { useRef, useState, useEffect, useCallback } from "react";
 
 interface SidebarMenuProps {
   userName: string;
+  activeItem: string;
 }
 
-export default function ProfsidebarMenu({ userName }: SidebarMenuProps) {
-  const [activeItem, setActiveItem] = useState<string>("Menu");
+export default function SidebarMenu({
+  userName,
+  activeItem: propActiveItem,
+}: SidebarMenuProps) {
+  const [activeSidebarItem, setActiveSidebarItem] = useState<string>(
+    propActiveItem || "Menu"
+  );
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isResizing = useRef(false);
-  const router = useRouter()
+  const router = useRouter();
 
   const minWidth = 300;
   const maxWidth = 450;
 
-  const [sidebarWidth, setSidebarWidth] = useState(350);
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    if (typeof window !== "undefined") {
+      const savedWidth = localStorage.getItem("sidebarWidth");
+      return savedWidth ? Number(savedWidth) : 350;
+    }
+    return 350;
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("sidebarWidth", sidebarWidth.toString());
+    }
+  }, [sidebarWidth]);
 
   const startResizing = () => {
     isResizing.current = true;
@@ -55,11 +72,24 @@ export default function ProfsidebarMenu({ userName }: SidebarMenuProps) {
     };
   }, [resize, stopResizing]);
 
-    const handleMenuClick = (label: string, path: string) => {
-    setActiveItem(label)
-    router.push(path)
-  }
+  const handleMenuClick = (label: string, path: string) => {
+    setActiveSidebarItem(label);
+    router.push(path);
+  };
 
+  const menuItems = [
+    { icon: <Home />, label: "Menu", path: "/menu" },
+    { icon: <UserRoundPen />, label: "Editar Perfil", path: "/perfil" },
+    { icon: <MessageSquare />, label: "Bate-Papo", path: "/forum" },
+    { icon: <CalendarPlus />, label: "Agendar", path: "/agendar" },
+    { icon: <FileClock />, label: "Histórico", path: "/historico" },
+    { icon: <Settings />, label: "Configurações", path: "/configuracoes" },
+    {
+      icon: <CalendarCheck2 />,
+      label: "Consultas Marcadas",
+      path: "/historico",
+    },
+  ];
 
   return (
     <>
@@ -68,7 +98,9 @@ export default function ProfsidebarMenu({ userName }: SidebarMenuProps) {
         className="fixed top-0 left-0 h-screen bg-pink3000 border-r border-pink5000 z-50 flex flex-col"
         style={{ width: sidebarWidth }}
       >
-        <div className="bg-pink2000 w-full h-2 fixed top-0 left-0 flex items-center px-4"></div>
+        <div className="bg-pink2000 w-full h-2 fixed top-0 left-0 flex items-center px-4">
+          
+        </div>
         {/* Topo e meio */}
         <div className="flex-grow overflow-auto">
           <div className="flex justify-center mt-10">
@@ -81,31 +113,19 @@ export default function ProfsidebarMenu({ userName }: SidebarMenuProps) {
             <h1 className="text-4xl font-bold text-pink4000">{userName}</h1>
           </div>
 
-          {[
-            { icon: <Home />, label: "Menu", path: "/menu" },
-            { icon: <UserRoundPen />, label: "Editar Perfil", path: "/perfil" },
-            { icon: <MessageSquare />, label: "Bate-Papo", path: "/forum" },
-            { icon: <CalendarPlus />, label: "Agendar", path: "/agendar" },
-            { icon: <FileClock />, label: "Histórico", path: "/historico" },
-            {
-              icon: <Settings />,
-              label: "Configurações",
-              path: "/configuracoes",
-            },
-            { icon: <CalendarCheck2 />, label: "Consultas Marcadas", path: "/historico" },
-          ].map((item, index) => (
+          {menuItems.map((item, index) => (
             <div key={index} className="flex justify-center mb-2">
               <Button
                 className={`flex justify-between items-center px-5 h-12 font-semibold rounded-xl w-full cursor-pointer transition-colors duration-300 ${
-                  activeItem === item.label
+                  activeSidebarItem === item.label
                     ? "bg-pink2000 text-pink1000"
                     : "text-pink4000 hover:bg-pink2000 hover:text-pink1000"
                 }`}
-                onClick={() => setActiveItem(item.label)}
+                onClick={() => handleMenuClick(item.label, item.path)}
               >
                 <ButtonIcon
                   className={
-                    activeItem === item.label
+                    activeSidebarItem === item.label
                       ? "text-pink1000"
                       : "text-pink4000"
                   }

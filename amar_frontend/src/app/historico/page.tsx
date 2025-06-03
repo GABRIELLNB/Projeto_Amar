@@ -23,6 +23,22 @@ export default function Histórico() {
   const [isExit, setIsExit] = useState(false);
   const [consultaSelecionada, setConsultaSelecionada] = useState<Agendamento | null>(null);
 
+  const [userType, setUserType] = useState<"profissional" | "estagiario" | "outro">("outro");
+  const [userName, setUserName] = useState<string>("");
+  
+  useEffect(() => {
+      const storedUserType = localStorage.getItem("user_type") as
+        | "profissional"
+        | "estagiario"
+        | "outro"
+        | null;
+      const storedUserName = localStorage.getItem("user_name") || "";
+  
+      if (storedUserType) setUserType(storedUserType);
+      setUserName(storedUserName);
+    }, []);
+  
+    
   const statusColors: Record<string, string> = {
     confirmado: 'bg-yellow-400 text-black',
     realizado: 'bg-green-500 text-white',
@@ -82,7 +98,11 @@ const cancelarAgendamento = async (id: number) => {
 
   return (
     <>
-      <SidebarMenu userName="Paulo Avelino" activeItem="Histórico" />
+      
+      <SidebarMenu userType={userType}
+        userName={userName}
+        activeItem="Histórico" />
+       
 
       <div className="ml-[360px] p-6 relative">
         <div className="gap-6 mt-15 px-6">

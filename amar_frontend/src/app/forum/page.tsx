@@ -18,6 +18,7 @@ export default function Agendar() {
   const minWidth = 300
   const maxWidth = 450
   const router = useRouter()
+  
 
   const startResizing = () => {
     isResizing.current = true

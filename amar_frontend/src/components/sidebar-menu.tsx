@@ -1,16 +1,18 @@
+"use client";
+
 import { Button, ButtonField, ButtonIcon } from "@/components/button";
 import { IconButton } from "@/components/icon-button";
 import { InputField, InputRoot } from "@/components/input";
-import { 
-  CalendarCheck2, 
-  CalendarPlus, 
-  FileClock, 
-  Home, 
-  MessageSquare, 
-  Send, 
-  Settings, 
-  User, 
-  UserRoundPen 
+import {
+  CalendarCheck2,
+  CalendarPlus,
+  FileClock,
+  Home,
+  MessageSquare,
+  Send,
+  Settings,
+  User,
+  UserRoundPen
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useRef, useState, useEffect, useCallback } from "react";
@@ -18,9 +20,10 @@ import React, { useRef, useState, useEffect, useCallback } from "react";
 interface SidebarMenuProps {
   userName: string;
   activeItem: string;
+  userType: "profissional" | "estagiario" | "outro";
 }
 
-export default function SidebarMenu({ userName, activeItem: propActiveItem }: SidebarMenuProps) {
+export default function SidebarMenu({ userName, activeItem: propActiveItem, userType }: SidebarMenuProps) {
   const [activeSidebarItem, setActiveSidebarItem] = useState<string>(propActiveItem || "Menu");
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isResizing = useRef(false);
@@ -72,7 +75,7 @@ export default function SidebarMenu({ userName, activeItem: propActiveItem }: Si
     router.push(path);
   };
 
-  const menuItems = [
+  const baseMenuItems = [
     { icon: <Home />, label: "Menu", path: "/menu" },
     { icon: <UserRoundPen />, label: "Editar Perfil", path: "/perfil" },
     { icon: <MessageSquare />, label: "Bate-Papo", path: "/forum" },
@@ -81,6 +84,13 @@ export default function SidebarMenu({ userName, activeItem: propActiveItem }: Si
     { icon: <Settings />, label: "Configurações", path: "/configuracoes" }
   ];
 
+  const extraItems =
+    userType === "profissional" || userType === "estagiario"
+      ? [{ icon: <CalendarCheck2 />, label: "Consultas Marcadas", path: "/consultas" }]
+      : [];
+
+  const menuItems = [...baseMenuItems, ...extraItems];
+
   return (
     <>
       <div
@@ -88,8 +98,10 @@ export default function SidebarMenu({ userName, activeItem: propActiveItem }: Si
         className="fixed top-0 left-0 h-screen bg-pink3000 border-r border-pink5000 z-50 flex flex-col"
         style={{ width: sidebarWidth }}
       >
-        <div className="bg-pink2000 w-full h-2 fixed top-0 left-0 flex items-center px-4"></div>
-        {/* Topo e meio */}
+        {/* Top bar */}
+        <div className="bg-pink2000 w-full h-2 fixed top-0 left-0 flex items-center px-4" />
+
+        {/* Conteúdo principal */}
         <div className="flex-grow overflow-auto">
           <div className="flex justify-center mt-10">
             <IconButton className="w-50 h-50 rounded-full bg-pink1000 text-pink4000 hover:text-pink4000 flex items-center justify-center transition-colors duration-300">
@@ -106,7 +118,7 @@ export default function SidebarMenu({ userName, activeItem: propActiveItem }: Si
               <Button
                 className={`flex justify-between items-center px-5 h-12 font-semibold rounded-xl w-full cursor-pointer transition-colors duration-300 ${
                   activeSidebarItem === item.label
-                    ? "bg-pink2000 text-pink1000" 
+                    ? "bg-pink2000 text-pink1000"
                     : "text-pink4000 hover:bg-pink2000 hover:text-pink1000"
                 }`}
                 onClick={() => handleMenuClick(item.label, item.path)}
@@ -120,7 +132,7 @@ export default function SidebarMenu({ userName, activeItem: propActiveItem }: Si
           ))}
         </div>
 
-        {/* Parte inferior - input + botão */}
+        {/* Rodapé com campo de mensagem */}
         <div className="flex items-center p-4 border-t border-pink2000 rounded-tr-2xl bg-pink2000">
           <InputRoot className="flex-20 bg-pink3000 h-10 border border-pink2000 rounded-xl px-4 flex items-center gap-2 focus-within:border-pink4000">
             <InputField placeholder="Digite sua mensagem..." />

@@ -4,6 +4,7 @@ import { Button } from '@/components/button'
 import { IconButton } from '@/components/icon-button'
 import { InputField, InputIcon, InputRoot } from '@/components/input'
 import SidebarMenu from '@/components/sidebar-menu'
+import {jwtDecode} from 'jwt-decode'
 import {
   ArrowLeft,
   Eye,
@@ -16,16 +17,31 @@ import {
   SquarePen,
   User,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function EditarPerfil() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
+  const [userType, setUserType] = useState<"profissional" | "estagiario" | "usuario">("usuario");
+  const [userName, setUserName] = useState<string>("");
+
+  useEffect(() => {
+    const storedUserType = localStorage.getItem("user_type") as
+      | "profissional"
+      | "estagiario"
+      | "usuario";
+    const storedUserName = localStorage.getItem("user_name") || "";
+
+    if (storedUserType) setUserType(storedUserType);
+    setUserName(storedUserName);
+  }, []);
 
   return (
     <div>
-      <SidebarMenu userName="Paulo Avelino" activeItem="Editar Perfil" />
+       <SidebarMenu userType={userType}
+        userName={userName}
+        activeItem="Editar Perfil"/>
 
       <div className="ml-[360px] p-6 relative">
         <div className="gap-6 mt-[-50] px-6">

@@ -13,6 +13,21 @@ export default function Menu() {
   const [data, setData] = useState<any[]>([]) // Supondo que você vai buscar alguma lista de dados
   const [loading, setLoading] = useState(true)
 
+  const [userType, setUserType] = useState<"profissional" | "estagiario" | "outro">("outro");
+    const [userName, setUserName] = useState<string>("");
+    
+  useEffect(() => {
+      const storedUserType = localStorage.getItem("user_type") as
+        | "profissional"
+        | "estagiario"
+        | "outro"
+        | null;
+      const storedUserName = localStorage.getItem("user_name") || "";
+  
+      if (storedUserType) setUserType(storedUserType);
+      setUserName(storedUserName);
+    }, []);
+    
   useEffect(() => {
     const token = localStorage.getItem('token')
 
@@ -46,7 +61,8 @@ export default function Menu() {
 
   return (
     <div>
-      <SidebarMenu userName="Paulo Avelino" activeItem="Menu" />
+      <SidebarMenu userType={userType}
+        userName={userName} activeItem='Menu' />
 
       <div className="ml-[360px] p-6 relative">
         <div className="gap-6 px-6">
@@ -54,7 +70,7 @@ export default function Menu() {
             <div className="flex-grow overflow-auto">
               <div className="grid grid-cols-2 gap-6 p-4 overflow-y-auto">
                 {data.length === 0
-                  ? <p></p>
+                  ? <p> </p>
                   : data.map((item, i) => (
                       <div
                         key={i}

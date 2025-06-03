@@ -5,7 +5,7 @@ import { IconButton } from '@/components/icon-button'
 import ProfsidebarMenu from '@/components/prof-sidebar-menu'
 import SidebarMenu from '@/components/sidebar-menu'
 import { ArrowLeft, CircleX, FileClock } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const consultas = [
   {
@@ -50,9 +50,25 @@ export default function Histórico() {
   const [isExit, setIsExit] = useState(false)
   const [consultaSelecionada, setConsultaSelecionada] = useState(null)
 
+  const [userType, setUserType] = useState<"profissional" | "estagiario" | "outro">("outro");
+  const [userName, setUserName] = useState<string>("");
+
+  useEffect(() => {
+    const storedUserType = localStorage.getItem("user_type") as
+      | "profissional"
+      | "estagiario"
+      | "outro"
+      | null;
+    const storedUserName = localStorage.getItem("user_name") || "";
+
+    if (storedUserType) setUserType(storedUserType);
+    setUserName(storedUserName);
+  }, []);
+
   return (
     <>
-      <ProfsidebarMenu userName="Paulo Avelino" />
+      <SidebarMenu userType ={userType}
+        userName={userName} activeItem='Consultas Marcadas'/>
 
       <div className="ml-[360px] p-6 relative">
         <div className="gap-6 mt-15 px-6">

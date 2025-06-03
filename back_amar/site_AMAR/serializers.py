@@ -27,6 +27,8 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
             user_type = 'estagiario'
 
         data['user_type'] = user_type
+        
+        data['name'] = user.nome  
 
         return data
 

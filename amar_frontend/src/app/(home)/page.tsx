@@ -42,13 +42,17 @@ async function onLogin(data: LoginSchema) {
     if (!response.ok) throw new Error('Erro no login')
 
     const json = await response.json()
+    console.log("Resposta do backend:", json);
 
     localStorage.setItem('token', json.access)
+    localStorage.setItem('user_type', json.user_type); // Salva tipo de usuário
+    localStorage.setItem('user_name', json.name); // Salva nome, se disponível
+    
 
     if (json.is_superuser) {
       router.push('/menu-adm')
     } else if (json.user_type === 'profissional' || json.user_type === 'estagiario') {
-      router.push('/menu-profissional')
+      router.push('/menu')
     } else {
       router.push('/menu')
     }
