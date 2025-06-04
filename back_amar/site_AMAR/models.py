@@ -202,14 +202,10 @@ class Agendamento(models.Model):
             
             
             
-'''
 class Forums(models.Model):
     imag_png = models.ImageField(upload_to='imagens/')
     nome = models.CharField(max_length=100, blank=True)
     publicacao = models.CharField(max_length=150, blank=True) 
     like = models.IntegerField(default=0)  #REANALIZAR ACHO QUE ESTÁ INCORRETO!
-    coment = models.IntegerField(default=0) #REANALIZAR ACHO QUE ESTÁ INCORRETO!
     def __str__(self):
         return self.nome
-    
-'''
