@@ -215,10 +215,10 @@ class AgendamentosPorDataView(APIView):
         # Obter os horários já agendados
         horarios_agendados = agendamentos.values_list('horario', flat=True)
 
-        # Passo 3: Filtrar as disponibilidades para excluir os horários já agendados
+        # Filtrar as disponibilidades para excluir os horários já agendados
         horarios_disponiveis = disponibilidades.exclude(horario__in=horarios_agendados)
 
-        # Passo 4: Retornar os profissionais e horários disponíveis
+        # Retornar os profissionais e horários disponíveis
         profissionais_disponiveis = [
             {"profissional": disponibilidade.atendente.nome, "horario": disponibilidade.horario, "sala": disponibilidade.sala,
         "local": disponibilidade.local,}
@@ -283,16 +283,11 @@ class DisponibilidadesPorDataView(APIView):
 
 
 
-'''
-from django.contrib.contenttypes.models import ContentType
-from .models import Disponibilidade
-
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def listar_horarios_disponiveis(request):
-    # Opcional: filtrar por data, se informado na query string
-    data = request.query_params.get('dia')
-
+    
+    
     # ContentTypes para filtrar só Profissional e Estagiario
     prof_ct = ContentType.objects.get_for_model(Profissional)
     est_ct = ContentType.objects.get_for_model(Estagiario)
@@ -301,9 +296,26 @@ def listar_horarios_disponiveis(request):
     disponibilidades = Disponibilidade.objects.filter(
         content_type__in=[prof_ct, est_ct]
     )
-    if data:
-        disponibilidades = disponibilidades.filter(dia=data)
-
+    
+    #Identifica quem é o usuario
+    user = request.user
+    user_ct = None
+    user_obj_id = None
+    
+    #remove as diponibilidades dos proprios funcionario/estagiario(ou seja pra eles não alto se atender)
+    if hasattr(user, 'profissional'):
+        user_ct = prof_ct
+        user_obj_id = user.profissional.id
+    elif hasattr(user, 'estagiario'):
+        user_ct = est_ct
+        user_obj_id = user.estagiario.id
+        
+    if user_ct and user_obj_id:
+        disponibilidades = disponibilidades.exclude(
+            Content_type = user_ct,
+            object_id = user_obj_id
+        )
+        
     resultado = []
 
     for disp in disponibilidades:
@@ -326,4 +338,3 @@ def listar_horarios_disponiveis(request):
             })
 
     return Response(resultado)
-'''
