@@ -209,3 +209,10 @@ class Forums(models.Model):
     like = models.IntegerField(default=0)  #REANALIZAR ACHO QUE ESTÁ INCORRETO!
     def __str__(self):
         return self.nome
+    
+class MensagemForum(models.Model):
+    forum = models.ForeignKey(Forums, on_delete=models.CASCADE, related_name='mensagens')
+    autor = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    mensagem = models.TextField()
+    data_envio = models.DateTimeField(auto_now_add=True)#TALVEZ SUBSTITUIR PARA HORA DE ENVIO(VER COMPORTAMENTO)
+    

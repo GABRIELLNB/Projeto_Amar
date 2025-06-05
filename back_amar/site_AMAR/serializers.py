@@ -1,6 +1,6 @@
 from django.apps import apps
 from rest_framework import serializers
-from .models import Agendamento, Estagiario, Profissional, Usuario
+from .models import Agendamento, Estagiario, Profissional, Usuario, Forums, MensagemForum
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -158,16 +158,21 @@ class DisponibilidadeSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     cpf = serializers.CharField()
     senha = serializers.CharField(write_only=True)
-
+'''
 
 class ForumSerializer(serializers.ModelSerializer):
     link = serializers.SerializerMethodField()
 
     class Metal:
-        model = Forums #Não está reconhesendo por causa das migrações, não consigo fazer aqui
-        fields = ['id', 'nome', 'publicacao', 'like', 'coment', 'link']
+        model = Forums
+        fields = ['id', 'nome', 'publicacao', 'like','link']
 
     def get_link(self, obj):
         return f"/forum{obj.id}/" #Url do front
 
-'''
+class MensagemForumSerializer(serializers.ModelSerializer):
+    autor_nome = serializers.CharField(source='autor.nome', read_only=True)
+    
+    class Meta:
+        model = MensagemForum
+        fields = ['id', 'autor_nome', 'mensagem', 'data_envio']

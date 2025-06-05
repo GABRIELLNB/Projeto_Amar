@@ -6,23 +6,26 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.response import Response
 from datetime import datetime
 from .models import Agendamento
-
+#from .utils import get_tipo_usuario #PARA O MENU
 from .models import (
     Agendamento,
     Usuario,
     Profissional,
     Estagiario,
-    Disponibilidade
+    Disponibilidade,
+    Forums,
+    MensagemForum
 )
 from .serializers import (
     AgendamentoSerializer,
     DisponibilidadeSerializer,
     UsuarioSerializer,
     ProfissionalSerializer,
-    EstagiarioSerializer
+    EstagiarioSerializer,
+    ForumSerializer,
+    MensagemForumSerializer
 )
 
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -282,59 +285,110 @@ class DisponibilidadesPorDataView(APIView):
 
 
 
+class DisponibilidadesPorhorariosView(APIView):
+    def get(request):
+        # ContentTypes para filtrar só Profissional e Estagiario
+        prof_ct = ContentType.objects.get_for_model(Profissional)
+        est_ct = ContentType.objects.get_for_model(Estagiario)
 
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def listar_horarios_disponiveis(request):
-    
-    
-    # ContentTypes para filtrar só Profissional e Estagiario
-    prof_ct = ContentType.objects.get_for_model(Profissional)
-    est_ct = ContentType.objects.get_for_model(Estagiario)
-
-    # Filtra disponibilidades por dia e atendentes certos
-    disponibilidades = Disponibilidade.objects.filter(
-        content_type__in=[prof_ct, est_ct]
-    )
-    
-    #Identifica quem é o usuario
-    user = request.user
-    user_ct = None
-    user_obj_id = None
-    
-    #remove as diponibilidades dos proprios funcionario/estagiario(ou seja pra eles não alto se atender)
-    if hasattr(user, 'profissional'):
-        user_ct = prof_ct
-        user_obj_id = user.profissional.id
-    elif hasattr(user, 'estagiario'):
-        user_ct = est_ct
-        user_obj_id = user.estagiario.id
-        
-    if user_ct and user_obj_id:
-        disponibilidades = disponibilidades.exclude(
-            Content_type = user_ct,
-            object_id = user_obj_id
+        # Filtra disponibilidades por dia e atendentes certos
+        disponibilidades = Disponibilidade.objects.filter(
+            content_type__in=[prof_ct, est_ct]
         )
         
-    resultado = []
+        #Identifica quem é o usuario
+        user = request.user
+        user_ct = None
+        user_obj_id = None
+        
+        #remove as diponibilidades dos proprios funcionario/estagiario(ou seja pra eles não alto se atender)
+        if hasattr(user, 'profissional'):
+            user_ct = prof_ct
+            user_obj_id = user.profissional.id
+        elif hasattr(user, 'estagiario'):
+            user_ct = est_ct
+            user_obj_id = user.estagiario.id
+            
+        if user_ct and user_obj_id:
+            disponibilidades = disponibilidades.exclude(
+                Content_type = user_ct,
+                object_id = user_obj_id
+            )
+            
+        resultado = []
 
-    for disp in disponibilidades:
-        # Verifica se já existe agendamento para essa disponibilidade (mesmo dia e horário)
-        agendamento_existe = Agendamento.objects.filter(
-            content_type=disp.content_type,
-            object_id=disp.object_id,
-            dia=disp.dia,
-            horario=disp.horario,
-            status='pendente'  # Considera agendamentos pendentes ocupando o horário
-        ).exists()
+        for disp in disponibilidades:
+            # Verifica se já existe agendamento para essa disponibilidade (mesmo dia e horário)
+            agendamento_existe = Agendamento.objects.filter(
+                content_type=disp.content_type,
+                object_id=disp.object_id,
+                dia=disp.dia,
+                horario=disp.horario,
+                status='pendente'  # Considera agendamentos pendentes ocupando o horário
+            ).exists()
 
-        if not agendamento_existe:
-            resultado.append({
-                "id_disponibilidade": disp.id,
-                "nome": disp.atendente.nome,
-                "tipo_atendente": disp.content_type.model,  # 'profissional' ou 'estagiario'
-                "dia": disp.dia,
-                "horario": disp.horario,
-            })
+            if not agendamento_existe:
+                resultado.append({
+                    "id_disponibilidade": disp.id,
+                    "nome": disp.atendente.nome,
+                    "tipo_atendente": disp.content_type.model,  # 'profissional' ou 'estagiario'
+                    "dia": disp.dia,
+                    "horario": disp.horario,
+                })
 
-    return Response(resultado)
+        return Response(resultado)
+
+''' #Não sei se via usar isso porque separei as viwes para organizar
+class ForumDetailView(APIView):
+    def get(self, request, forum_id):
+        try:
+            forum = Forums.objects.get(id=forum_id)
+        except Forums.DoesNotExist:
+            return Response({'detail': 'Fórum não encontrado'}, status=404)
+        
+        serializer = ForumSerializer(forum)
+        return Response(serializer.data)
+'''
+class ForumListView(APIView):
+    def get(self, request):
+        foruns = Forums.objects.all().order_by('-id')
+        serializer = ForumSerializer(foruns, many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+
+
+
+    
+'''
+class MenuView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        usuario = request.user
+        tipo = get_tipo_usuario(usuario)
+
+        # Buscar os fóruns mais curtidos
+        foruns = Forums.objects.order_by('-like')[:10]
+        serializer = ForumSerializer(foruns, many=True)
+
+        data = {
+            'nome': usuario.nome,
+            'email': usuario.email,
+            'tipo_usuario': tipo,
+            'opcoes_menu': [
+                'Editar perfil',
+                'Bate-Papo',
+                'Agendar',
+                'Histórico',
+                'Configurações',
+            ],
+            'extras': {
+                'forum_mais_valiados': serializer.data,  # agora vem do banco!
+                'propagandas': [
+                    {'imagem': '/media/banner1.jpg', 'link': '/promo1'},
+                    {'imagem': '/media/banner2.jpg', 'link': '/promo2'}
+                ]
+            }
+        }
+
+        return Response(data, status=status.HTTP_200_OK)
+'''
