@@ -1,4 +1,5 @@
 import re
+from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
 from django.utils.dateparse import parse_date
 from rest_framework import status, generics, permissions
@@ -182,13 +183,28 @@ class EstagiarioDetailView(APIView):
 
 # AGENDAMENTO
 # View para listar e criar agendamentos com autenticação obrigatória
-class AgendamentoListCreateView(generics.ListCreateAPIView):
-    queryset = Agendamento.objects.all()
+from django.contrib.contenttypes.models import ContentType
+from rest_framework.permissions import IsAuthenticated
+
+class AgendamentoListCreateView(generics.ListCreateAPIView):  # <- CORRIGIDO AQUI
     serializer_class = AgendamentoSerializer
     permission_classes = [IsAuthenticated]
 
-    def perform_create(self, serializer):
-        serializer.save(usuario=self.request.user)
+    def get_queryset(self):
+        user = self.request.user
+
+        profissional = Profissional.objects.filter(usuario=user).first()
+        estagiario = Estagiario.objects.filter(usuario=user).first()
+
+        if profissional:
+            ct = ContentType.objects.get_for_model(Profissional)
+            return Agendamento.objects.filter(content_type=ct, object_id=profissional.id)
+
+        if estagiario:
+            ct = ContentType.objects.get_for_model(Estagiario)
+            return Agendamento.objects.filter(content_type=ct, object_id=estagiario.id)
+
+        return Agendamento.objects.filter(usuario=user)
 
 # View para detalhar, atualizar e deletar agendamento com autenticação obrigatória
 class AgendamentoDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -284,6 +300,29 @@ class DisponibilidadesPorDataView(APIView):
         return Response(serializer.data)
 
 
+from django.contrib.contenttypes.models import ContentType
+from rest_framework import generics
+from .models import Agendamento, Profissional, Estagiario
+from .serializers import AgendamentoSerializer
+
+class MinhasConsultasAPIView(generics.ListAPIView):
+    serializer_class = AgendamentoSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+
+        profissional = Profissional.objects.filter(usuario=user).first()
+        estagiario = Estagiario.objects.filter(usuario=user).first()
+
+        if profissional:
+            ct = ContentType.objects.get_for_model(Profissional, for_concrete_model=False)
+            return Agendamento.objects.filter(content_type=ct, object_id=profissional.id)
+
+        if estagiario:
+            ct = ContentType.objects.get_for_model(Estagiario, for_concrete_model=False)
+            return Agendamento.objects.filter(content_type=ct, object_id=estagiario.id)
+
+        return Agendamento.objects.none()
 
 class DisponibilidadesPorhorariosView(APIView):
     def get(request):

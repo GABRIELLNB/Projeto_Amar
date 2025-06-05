@@ -80,7 +80,10 @@ from rest_framework import serializers
 class AgendamentoSerializer(serializers.ModelSerializer):
     content_type = serializers.PrimaryKeyRelatedField(queryset=ContentType.objects.all())
     object_id = serializers.IntegerField()
-
+    servico = serializers.SerializerMethodField()
+    atendente_nome = serializers.SerializerMethodField()
+    usuario = serializers.SerializerMethodField()
+    
     class Meta:
         model = Agendamento
         fields = [
@@ -93,9 +96,10 @@ class AgendamentoSerializer(serializers.ModelSerializer):
             'local',
             'sala',
             'status',
+            'servico',
+            'atendente_nome'
             
         ]
-        read_only_fields = ['status']
 
     def validate(self, data):
         content_type = data.get('content_type')
@@ -131,6 +135,19 @@ class AgendamentoSerializer(serializers.ModelSerializer):
         validated_data.pop('usuario', None)
         validated_data['status'] = 'confirmado'
         return Agendamento.objects.create(usuario=usuario, **validated_data)
+    
+    def get_servico(self, obj):
+        if obj.atendente:
+            return obj.atendente.tipo_servico
+        return None
+    
+    def get_usuario(self, obj):
+        return obj.usuario.nome
+    
+    def get_atendente_nome(self, obj):
+        if obj.atendente:
+            return getattr(obj.atendente, 'nome', None)
+        return None
 
 
 

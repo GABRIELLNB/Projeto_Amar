@@ -109,7 +109,7 @@ const cancelarAgendamento = async (id: number) => {
           <div className="flex items-center gap-2 mb-6 ml-5">
             <h1 className="flex items-center gap-2 text-3xl font-semibold text-pink4000 whitespace-nowrap">
               <FileClock className="w-8 h-8" />
-              Histórico de Consultas:
+              Histórico de Agendamentos:
             </h1>
           </div>
 

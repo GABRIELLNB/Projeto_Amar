@@ -1,8 +1,10 @@
 from django.urls import path
 from .views import (
+    
     CadastroView,
     CancelarAgendamentoView,
     DisponibilidadesPorDataView,
+    MinhasConsultasAPIView,
     PreCadastroFuncionarioView,
     UsuarioListView, UsuarioDetailView,
     ProfissionalListView, ProfissionalDetailView,
@@ -38,6 +40,7 @@ urlpatterns = [
     path('api/agendamentos/<int:pk>/cancelar/', CancelarAgendamentoView.as_view(), name='cancelar-agendamento'),
    
     path('api/disponibilidades-por-data/<str:data>/', DisponibilidadesPorDataView.as_view(), name='horarios-disponiveis-por-data'),
+     path('api/agendamentos/minhas-consultas/', MinhasConsultasAPIView.as_view(), name='minhas-consultas'),
     path('api/disponibilidades-por-horario/<str:time>/', DisponibilidadesPorhorariosView.as_view(), name='horarios-disponiveis-por-horas'),
     
     path('api/forum/', ForumListView.as_view(), name='forum-list'), 
