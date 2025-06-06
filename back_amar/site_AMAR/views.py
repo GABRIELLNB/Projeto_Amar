@@ -1,4 +1,5 @@
 import re
+from urllib import request
 from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
 from django.utils.dateparse import parse_date
@@ -119,6 +120,61 @@ class PreCadastroFuncionarioView(APIView):
                 )
 
         return Response({'detail': 'Pré-cadastro realizado com sucesso!'}, status=status.HTTP_201_CREATED)
+    
+    def put(self, request):
+        data = request.data
+        tipo = data.get('tipo')
+        cpf = normalizar_cpf(data.get('cpf', ''))
+        nome = data.get('nome')
+        matricula = data.get('matricula', '')
+        telefone = data.get('telefone', '')
+        tipo_servico = data.get('tipo_servico', '')
+        disponibilidades = data.get('disponibilidades', [])
+        local = data.get('local', None)
+        sala = data.get('sala', None)
+
+        # Buscar o objeto existente pelo CPF e tipo
+        if tipo == 'profissional':
+            try:
+                obj = Profissional.objects.get(cpf=cpf)
+            except Profissional.DoesNotExist:
+                return Response({'error': 'Profissional não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+        elif tipo == 'estagiario':
+            try:
+                obj = Estagiario.objects.get(cpf=cpf)
+            except Estagiario.DoesNotExist:
+                return Response({'error': 'Estagiário não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({'error': 'Tipo inválido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Atualizar os campos
+        obj.nome = nome
+        obj.matricula = matricula
+        obj.telefone = telefone
+        obj.tipo_servico = tipo_servico
+        obj.save()
+
+        # Atualizar disponibilidades
+        content_type = ContentType.objects.get_for_model(obj)
+        Disponibilidade.objects.filter(content_type=content_type, object_id=obj.id).delete()
+
+        for disp in disponibilidades:
+            dia_str = disp.get('dia')
+            horarios = disp.get('horarios', [])
+            dia = parse_date(dia_str)
+            if not dia:
+                continue
+            for horario in horarios:
+                Disponibilidade.objects.create(
+                    content_type=content_type,
+                    object_id=obj.id,
+                    dia=dia,
+                    horario=horario,
+                    local=local,
+                    sala=sala
+                )
+
+        return Response({'detail': 'Funcionário atualizado com sucesso!'}, status=status.HTTP_200_OK)
 
 
 # LISTAGENS
@@ -159,27 +215,102 @@ class UsuarioDetailView(APIView):
 class ProfissionalDetailView(APIView):
     permission_classes = [AllowAny]
 
-    def delete(self, request, pk):
+    def get_object(self, pk):
         try:
-            profissional = Profissional.objects.get(pk=pk)
-            profissional.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            return Profissional.objects.get(pk=pk)
         except Profissional.DoesNotExist:
+            return None
+        
+    def get(self, request, pk):
+        profissional = self.get_object(pk)
+        if not profissional:
             return Response({'error': 'Profissional não encontrado'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ProfissionalSerializer(profissional)
+        return Response(serializer.data)
+
+    def patch(self, request, pk):  # PATCH para atualização parcial
+        profissional = self.get_object(pk)
+        if not profissional:
+            return Response({'error': 'Profissional não encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ProfissionalSerializer(profissional, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+
+            # Atualizar disponibilidades (se vierem na request)
+            disponibilidades_data = request.data.get('disponibilidades')
+            if disponibilidades_data:
+                profissional.disponibilidades.all().delete()
+                for disp in disponibilidades_data:
+                    Disponibilidade.objects.create(
+                        content_type=ContentType.objects.get_for_model(Profissional),
+                        object_id=profissional.id,
+                        dia=disp['dia'],
+                        horario=disp['horario'],
+                        local=disp.get('local'),
+                        sala=disp.get('sala'),
+                    )
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+    def delete(self, request, pk):
+        profissional = self.get_object(pk)
+        if not profissional:
+            return Response({'error': 'Profissional não encontrado'}, status=status.HTTP_404_NOT_FOUND)
+        profissional.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 
 # View para detalhar e deletar um estagiário pelo id (pk)
 class EstagiarioDetailView(APIView):
     permission_classes = [AllowAny]
-
-    def delete(self, request, pk):
+    
+    def get_object(self, pk):
         try:
-            estagiario = Estagiario.objects.get(pk=pk)
-            estagiario.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            return Estagiario.objects.get(pk=pk)
         except Estagiario.DoesNotExist:
+            return None
+        
+    def get(self, request, pk):
+        estagiario = self.get_object(pk)
+        if not estagiario:
+            return Response({'error': 'Estagiário não encontrado'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = EstagiarioSerializer(estagiario)
+        return Response(serializer.data)
+
+
+    def patch(self, request, pk):  # Atualização parcial com PATCH
+        estagiario = self.get_object(pk)
+        if not estagiario:
             return Response({'error': 'Estagiário não encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
+        serializer = EstagiarioSerializer(estagiario, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+
+            # Atualizar disponibilidades (se vierem na request)
+            disponibilidades_data = request.data.get('disponibilidades')
+            if disponibilidades_data:
+                estagiario.disponibilidades.all().delete()
+                for disp in disponibilidades_data:
+                    Disponibilidade.objects.create(
+                        content_type=ContentType.objects.get_for_model(Estagiario),
+                        object_id=estagiario.id,
+                        dia=disp['dia'],
+                        horario=disp['horario'],
+                        local=disp.get('local'),
+                        sala=disp.get('sala'),
+                    )
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def delete(self, request, pk):
+        estagiario = self.get_object(pk)
+        if not estagiario:
+            return Response({'error': 'Estagiário não encontrado'}, status=status.HTTP_404_NOT_FOUND)
+        estagiario.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 # AGENDAMENTO
 # View para listar e criar agendamentos com autenticação obrigatória

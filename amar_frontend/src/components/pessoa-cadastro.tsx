@@ -40,7 +40,6 @@ const cadastroSchema = z.object({
 
 interface CadastroPessoaProps {
   type: 'profissional' | 'estagiario'
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   onSubmit: (data: any) => void
 }
 
@@ -280,7 +279,6 @@ const router = useRouter()
               <label className="text-sm text-pink4000 font-medium">Datas Disponíveis</label>
               {formData.disponibilidades.map((disp, index) => (
                 <div
-                  // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
                   key={index}
                   className="w-full p-4 rounded-md flex flex-col gap-2"
                 >
@@ -310,8 +308,7 @@ const router = useRouter()
                   {/* Inputs de Horário */}
                   {disp.horarios.map((horario, hIndex) => (
                     <div
-                      key={`${index}-${// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-hIndex}`}
+                      key={`${index}-${hIndex}`}
                       className="flex items-center gap-2 w-full"
                     >
                       <InputRoot className="flex-1 group bg-pink1000 h-12 border border-pink2000 rounded-xl px-4 flex items-center gap-2 focus-within:border-pink4000 data-[error=true]:border-red-700">

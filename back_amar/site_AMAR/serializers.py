@@ -52,23 +52,49 @@ class UsuarioSerializer(serializers.ModelSerializer):
         return usuario
 
 
+# Serializer para o modelo Disponibilidade, que expõe a disponibilidade
+# dos atendentes (profissionais ou estagiários), incluindo nome, tipo,
+# serviço e detalhes do horário e local.
+class DisponibilidadeSerializer(serializers.ModelSerializer):
+    atendente_nome = serializers.CharField(source='atendente.nome', read_only=True)
+    tipo_atendente = serializers.CharField(source='content_type.model', read_only=True)
+    servico = serializers.SerializerMethodField()
+    object_id = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Disponibilidade
+        fields = ['id', 'atendente_nome', 'tipo_atendente', 'dia', 'horario', 'servico', 'object_id', 'local', 'sala']
+        
+    def get_servico(self, obj):
+        if obj.atendente:
+            return obj.atendente.tipo_servico
+        return None
+    
 # Serializer para o modelo Profissional, expondo campos do profissional
 # e o e-mail relacionado ao usuário correspondente (via relação one-to-one).   
 class ProfissionalSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='usuario.email', read_only=True)
+    disponibilidades = DisponibilidadeSerializer(many=True, read_only=True)
+
 
     class Meta:
         model = Profissional
-        fields = ['id', 'cpf', 'nome', 'matricula', 'telefone', 'tipo_servico', 'email']
+        fields = [
+            'id', 'cpf', 'nome', 'matricula', 'telefone', 'tipo_servico',
+            'email', 'disponibilidades'  # adicione os outros campos que existirem no modelo
+        ]
 
 
 # Serializer para o modelo Estagiario, similar ao ProfissionalSerializer,
 # incluindo o e-mail via relação com o modelo Usuario.
 class EstagiarioSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='usuario.email', read_only=True)
+    disponibilidades = DisponibilidadeSerializer(many=True, read_only=True)
+    
     class Meta:
         model = Estagiario
-        fields = ['id', 'cpf', 'nome', 'matricula', 'telefone', 'tipo_servico', 'email']
+        fields = ['id', 'cpf', 'nome', 'matricula', 'telefone', 'tipo_servico',
+            'email', 'disponibilidades']
 
 
 # Serializer para o modelo Agendamento, responsável por validar,
@@ -80,10 +106,7 @@ from rest_framework import serializers
 class AgendamentoSerializer(serializers.ModelSerializer):
     content_type = serializers.PrimaryKeyRelatedField(queryset=ContentType.objects.all())
     object_id = serializers.IntegerField()
-    servico = serializers.SerializerMethodField()
-    atendente_nome = serializers.SerializerMethodField()
-    usuario = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = Agendamento
         fields = [
@@ -96,10 +119,9 @@ class AgendamentoSerializer(serializers.ModelSerializer):
             'local',
             'sala',
             'status',
-            'servico',
-            'atendente_nome'
             
         ]
+        read_only_fields = ['status']
 
     def validate(self, data):
         content_type = data.get('content_type')
@@ -135,41 +157,11 @@ class AgendamentoSerializer(serializers.ModelSerializer):
         validated_data.pop('usuario', None)
         validated_data['status'] = 'confirmado'
         return Agendamento.objects.create(usuario=usuario, **validated_data)
-    
-    def get_servico(self, obj):
-        if obj.atendente:
-            return obj.atendente.tipo_servico
-        return None
-    
-    def get_usuario(self, obj):
-        return obj.usuario.nome
-    
-    def get_atendente_nome(self, obj):
-        if obj.atendente:
-            return getattr(obj.atendente, 'nome', None)
-        return None
 
 
 
 
-# Serializer para o modelo Disponibilidade, que expõe a disponibilidade
-# dos atendentes (profissionais ou estagiários), incluindo nome, tipo,
-# serviço e detalhes do horário e local.
-class DisponibilidadeSerializer(serializers.ModelSerializer):
-    atendente_nome = serializers.CharField(source='atendente.nome', read_only=True)
-    tipo_atendente = serializers.CharField(source='content_type.model', read_only=True)
-    servico = serializers.SerializerMethodField()
-    object_id = serializers.IntegerField(read_only=True)
 
-    class Meta:
-        model = Disponibilidade
-        fields = ['id', 'atendente_nome', 'tipo_atendente', 'dia', 'horario', 'servico', 'object_id', 'local', 'sala']
-        
-    def get_servico(self, obj):
-        if obj.atendente:
-            return obj.atendente.tipo_servico
-        return None
-    
     
 '''
 class LoginSerializer(serializers.Serializer):

@@ -5,7 +5,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core.exceptions import ValidationError
-
+from django.contrib.contenttypes.fields import GenericRelation
 
 # Gerenciador personalizado para a criação de usuários e superusuários
 class UsuarioManager(BaseUserManager):
@@ -57,10 +57,16 @@ class Profissional(models.Model):
     matricula = models.CharField(max_length=20, blank=True, unique=True)
     telefone = models.CharField(max_length=20, blank=True)
     tipo_servico = models.CharField(max_length=50, blank=True)  # sem cedilha 
+    disponibilidades = GenericRelation('Disponibilidade', related_query_name='profissionais')
     
     def save(self, *args, **kwargs):
         if self.usuario:
             self.nome = self.usuario.nome
+            if not self.telefone:
+                self.telefone = self.usuario.telefone  # se existir esse campo no modelo Usuario
+            if not self.matricula:
+                self.matricula = self.usuario.matricula  # idem
+            # tipo_servico geralmente é exclusivo do Profissional, então preencha manualmente
         super().save(*args, **kwargs)
         
     def __str__(self):
@@ -77,6 +83,7 @@ class Estagiario(models.Model):
     matricula = models.CharField(max_length=20, blank=True, unique=True)
     telefone = models.CharField(max_length=20, blank=True)
     tipo_servico = models.CharField(max_length=50, blank=True)  # sem cedilha 
+    disponibilidades = GenericRelation('Disponibilidade', related_query_name='estagiarios')
     
     def save(self, *args, **kwargs):
         if self.usuario:

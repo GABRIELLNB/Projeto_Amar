@@ -13,7 +13,7 @@ from .views import (
     AgendamentosPorDataView,
     DisponibilidadesPorhorariosView,
     ForumListView,
-    ForumChatView,
+    #ForumChatView,
 )
 from .views import MyTokenObtainPairView
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -44,7 +44,7 @@ urlpatterns = [
     path('api/disponibilidades-por-horario/<str:time>/', DisponibilidadesPorhorariosView.as_view(), name='horarios-disponiveis-por-horas'),
     
     path('api/forum/', ForumListView.as_view(), name='forum-list'), 
-    path('api/forum/<int:forum_id>/chat/', ForumChatView.as_view(), name='forum-chat'), #Não sei se assim está correto!
+   # path('api/forum/<int:forum_id>/chat/', ForumChatView.as_view(), name='forum-chat'), #Não sei se assim está correto!
 
     #path('api/Login/', LoginView.as_view(), name='Login'),
     #path('api/Menu/', MenuView.as_view(), name='Menu'),
