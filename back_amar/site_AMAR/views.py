@@ -554,6 +554,77 @@ class DisponibilidadesPorhorariosView(APIView):
 
         return Response(resultado)
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.contrib.contenttypes.models import ContentType
+
+
+class DatasDisponiveisView(APIView):
+    def get(self, request):
+        prof_ct = ContentType.objects.get_for_model(Profissional)
+        est_ct = ContentType.objects.get_for_model(Estagiario)
+
+        disponibilidades = Disponibilidade.objects.filter(
+            content_type__in=[prof_ct, est_ct]
+        )
+
+        user = request.user
+        user_ct = None
+        user_obj_id = None
+
+        if hasattr(user, 'profissional'):
+            user_ct = prof_ct
+            user_obj_id = user.profissional.id
+        elif hasattr(user, 'estagiario'):
+            user_ct = est_ct
+            user_obj_id = user.estagiario.id
+
+        if user_ct and user_obj_id:
+            disponibilidades = disponibilidades.exclude(
+                content_type=user_ct,
+                object_id=user_obj_id
+            )
+
+        # Agora pegar as datas únicas ordenadas
+        datas_unicas = disponibilidades.values_list('dia', flat=True).distinct().order_by('dia')
+
+        return Response(list(datas_unicas))
+
+    
+    
+"""
+from django.db.models import Q
+from django.shortcuts import render
+from .models import Usuario, Profissional, Estagiario, Disponibilidade, Agendamento, Forums, MensagemForum
+
+class BuscaGeralView(APIView):
+    def get(self, request):
+        q = request.GET.get('q', '').strip()
+        if not q:
+            return Response([])
+
+        queryset = Disponibilidade.objects.filter(
+            Q(horario__icontains=q) |
+            Q(local__icontains=q) |
+            Q(sala__icontains=q) |
+            Q(atendente__nome__icontains=q) |
+            Q(atendente__tipo_servico__icontains=q)
+        )
+
+        resultados = []
+        for disp in queryset:
+            resultados.append({
+                'id': disp.id,
+                'horario': disp.horario,
+                'atendente_nome': disp.atendente.nome,
+                'servico': getattr(disp.atendente, 'tipo_servico', ''),
+                'local': disp.local,
+                'sala': disp.sala,
+            })
+
+        return Response(resultados)
+"""
+
 ''' #Não sei se via usar isso porque separei as viwes para organizar
 class ForumDetailView(APIView):
     def get(self, request, forum_id):

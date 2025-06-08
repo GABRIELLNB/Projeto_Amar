@@ -1,7 +1,6 @@
 import { InputField, InputRoot } from '@/components/input'
 import { Search } from 'lucide-react'
-import { Button } from './button'
-import { cn } from '@/lib/utils' // ou 'clsx'
+import { cn } from '@/lib/utils'
 
 interface BuscaPorNomeProps {
   valor: string
@@ -17,22 +16,21 @@ export function BuscaPorNome({
   className,
 }: BuscaPorNomeProps) {
   return (
-    <div className="flex flex-col rounded-sm">
+    <div className="w-full max-w-xs">
       <InputRoot
         className={cn(
-          'group bg-pink1000 h-10 border w-58 border-pink2000 rounded-sm px-4 flex items-center gap-2 focus-within:border-pink4000 data-[error=true]:border-red-700',
+          'relative bg-pink1000 h-10 border border-pink2000 rounded-sm px-4 flex items-center gap-2 focus-within:border-pink4000',
           className
         )}
       >
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-pink2000 w-5 h-5 pointer-events-none" />
         <InputField
-          id="busca-nome"
-          placeholder={placeholder || 'Busca:'}
+          type="text"
+          placeholder={placeholder || 'Buscar...'}
           value={valor}
-          onChange={e => aoAlterar(e.target.value)}
+          onChange={(e) => aoAlterar(e.target.value)}
+          className="pl-10 w-full bg-transparent text-pink2000 placeholder:text-pink2000 focus:outline-none"
         />
-        <Button className="ml-[-95] bg-pink1000 text-pink2000 p-2 rounded-2xl hover:bg-pink1000 transition-colors duration-300 hover:text-pink4000">
-          <Search className="w-5 h-5 cursor-pointer" />
-        </Button>
       </InputRoot>
     </div>
   )

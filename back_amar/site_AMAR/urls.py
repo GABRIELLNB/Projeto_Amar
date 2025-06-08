@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import (
     
+    #BuscaGeralView,
     CadastroView,
     CancelarAgendamentoView,
     DisponibilidadesPorDataView,
@@ -17,6 +18,7 @@ from .views import (
 )
 from .views import MyTokenObtainPairView
 from rest_framework_simplejwt.views import TokenRefreshView
+
 
 urlpatterns = [
     path('api/token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
@@ -44,6 +46,8 @@ urlpatterns = [
     path('api/disponibilidades-por-data/<str:data>/', DisponibilidadesPorDataView.as_view(), name='horarios-disponiveis-por-data'),
      path('api/agendamentos/minhas-consultas/', MinhasConsultasAPIView.as_view(), name='minhas-consultas'),
     path('api/disponibilidades-por-horario/<str:time>/', DisponibilidadesPorhorariosView.as_view(), name='horarios-disponiveis-por-horas'),
+    
+    #path('api/busca-geral/', BuscaGeralView.as_view(), name='busca-geral'),
     
     path('api/forum/', ForumListView.as_view(), name='forum-list'), 
    # path('api/forum/<int:forum_id>/chat/', ForumChatView.as_view(), name='forum-chat'), #Não sei se assim está correto!

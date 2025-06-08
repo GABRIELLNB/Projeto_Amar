@@ -8,7 +8,7 @@ import { ptBR } from "date-fns/locale/pt-BR";
 import { ArrowLeft, CalendarCheck2, History } from "lucide-react";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { useRouter } from "next/navigation";
 
 type HorarioDisponivel = {
@@ -27,6 +27,7 @@ type HorarioDisponivel = {
 export default function Agendar() {
   const router = useRouter();
   const [agendados, setAgendados] = useState<number[]>([]);
+  const [buscaNome, setBuscaNome] = useState("");
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [horariosDisponiveis, setHorariosDisponiveis] = useState<
@@ -87,44 +88,43 @@ export default function Agendar() {
       });
 
       if (!res.ok) {
-      const errorData = await res.json();
-      const mensagemErro =
-        errorData?.detail ||
-        errorData?.non_field_errors?.join(", ") ||
-        JSON.stringify(errorData) ||
-        `Erro ao agendar: ${res.status}`;
+        const errorData = await res.json();
+        const mensagemErro =
+          errorData?.detail ||
+          errorData?.non_field_errors?.join(", ") ||
+          JSON.stringify(errorData) ||
+          `Erro ao agendar: ${res.status}`;
 
-      throw new Error(mensagemErro);
-    }
+        throw new Error(mensagemErro);
+      }
 
-    // Aqui você pode marcar o horário como "agendado" — você precisa de um estado para isso
-    setAgendados((prev) => [...prev, horarioId]);
+      // Aqui você pode marcar o horário como "agendado" — você precisa de um estado para isso
+      setAgendados((prev) => [...prev, horarioId]);
 
-    // Espera 3 segundos para o usuário ver o "Marcado"
-    setTimeout(async () => {
-      // Remove o horário agendado da lista disponível
-      setHorariosDisponiveis((prev) =>
-        prev.filter((item) => item.id !== horarioId)
-      );
-      // Remove o horário do marcado (se quiser)
-      setAgendados((prev) => prev.filter((id) => id !== horarioId));
-      
+      // Espera 3 segundos para o usuário ver o "Marcado"
+      setTimeout(async () => {
+        // Remove o horário agendado da lista disponível
+        setHorariosDisponiveis((prev) =>
+          prev.filter((item) => item.id !== horarioId)
+        );
+        // Remove o horário do marcado (se quiser)
+        setAgendados((prev) => prev.filter((id) => id !== horarioId));
 
-      // Atualiza horários disponíveis
-      const dataFormatada = format(selectedDate, "yyyy-MM-dd");
-      const horariosRes = await fetch(
-        `http://localhost:8000/api/disponibilidades-por-data/${dataFormatada}/`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+        // Atualiza horários disponíveis
+        const dataFormatada = format(selectedDate, "yyyy-MM-dd");
+        const horariosRes = await fetch(
+          `http://localhost:8000/api/disponibilidades-por-data/${dataFormatada}/`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-      if (!horariosRes.ok) throw new Error(`Erro ${horariosRes.status}`);
-      const dados = await horariosRes.json();
-      setHorariosDisponiveis(dados);
-       }, 3000);
+        if (!horariosRes.ok) throw new Error(`Erro ${horariosRes.status}`);
+        const dados = await horariosRes.json();
+        setHorariosDisponiveis(dados);
+      }, 3000);
     } catch (error: any) {
       console.error(error);
       alert(error.message || "Erro ao marcar o horário.");
@@ -184,6 +184,32 @@ export default function Agendar() {
       window.removeEventListener("mouseup", stopResizing);
     };
   }, [resize, stopResizing]);
+
+  const [diaFiltro, setDiaFiltro] = useState<string>(""); // formato "YYYY-MM-DD"
+  const [horaFiltro, setHoraFiltro] = useState<string>("");
+
+  // Extrai as datas disponíveis únicas (YYYY-MM-DD)
+  const datasDisponiveis = Array.from(
+    new Set(horariosDisponiveis.map((h) => h.dia))
+  ).sort();
+
+  // Extrai horas únicas
+  const horasUnicas = Array.from(
+    new Set(horariosDisponiveis.map((h) => h.horario))
+  ).sort();
+
+
+  const horariosFiltrados = horariosDisponiveis.filter((h) => {
+  const diaOk = diaFiltro ? h.dia === diaFiltro : true;
+  const horaOk = horaFiltro ? h.horario === horaFiltro : true;
+
+  const nomeOk = buscaNome
+    ? h.atendente_nome.toLowerCase().includes(buscaNome.toLowerCase()) ||
+      h.servico.toLowerCase().includes(buscaNome.toLowerCase())
+    : true;
+
+  return diaOk && horaOk && nomeOk;
+});
 
   return (
     <>
@@ -253,28 +279,23 @@ export default function Agendar() {
               </label>
               <select
                 id="filtroHora"
+                value={horaFiltro}
+                onChange={(e) => setHoraFiltro(e.target.value)}
                 className="border border-pink2000 rounded-sm py-1 text-sm w-40"
               >
                 <option value="">Todas</option>
-              </select>
-            </div>
-
-            {/* Filtro por dia do mês */}
-            <div className="flex items-center gap-2 text-pink4000">
-              <label htmlFor="filtroDia" className="text-sm text-pink4000">
-                Filtrar por dia do mês:
-              </label>
-              <select
-                id="filtroDia"
-                className="border border-pink2000 rounded-sm px-3 py-1 text-sm w-40"
-              >
-                <option value="">Todos</option>
+                {horasUnicas.map((hora) => (
+                  <option key={hora} value={hora}>
+                    {hora}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
 
           <div className="flex items-center justify-between flex-wrap gap-4 mb-[-16]">
             <div className="flex justify-center">
+              
               <Button className="flex justify-between rounded-sm items-center bg-pink3000 px-5 h-10 text-pink2000 font-semibold w-full cursor-pointer transition-colors duration-300 hover:bg-pink2000 hover:text-pink1000">
                 <ButtonIcon className="text-pink4000 w-7 ">
                   <History />
@@ -290,7 +311,7 @@ export default function Agendar() {
 
             <div>
               {/* define largura para o BuscaPorNome */}
-              <BuscaPorNome valor="" aoAlterar={() => {}} />
+              <BuscaPorNome valor={buscaNome} aoAlterar={setBuscaNome} placeholder="Busca nome ou serviço" />
             </div>
           </div>
 
@@ -304,6 +325,7 @@ export default function Agendar() {
               <thead>
                 <tr className="bg-pink2000 text-pink1000 border border-pink3000 text-center">
                   <th className="p-2">Hora</th>
+                  <th className="p-2">Dia</th>
                   <th className="p-2">Nome</th>
                   <th className="p-2">Serviço</th>
                   <th className="p-2">Local</th>
@@ -312,10 +334,11 @@ export default function Agendar() {
                 </tr>
               </thead>
               <tbody>
-                {horariosDisponiveis.length > 0 ? (
-                  horariosDisponiveis.map((item) => (
+                {horariosFiltrados.length > 0 ? (
+                  horariosFiltrados.map((item) => (
                     <tr key={item.id}>
                       <td className="p-2">{item.horario}</td>
+                      <td className="p-2">{item.dia}</td>
                       <td className="p-2">{item.atendente_nome}</td>
                       <td className="p-2">{item.servico}</td>
                       <td className="p-2">{item.local}</td>

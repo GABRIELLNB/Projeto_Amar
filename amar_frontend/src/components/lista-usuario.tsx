@@ -6,6 +6,7 @@ import { IconButton } from "@/components/icon-button";
 import type React from "react";
 import { Button } from "./button";
 import { useRouter } from "next/navigation";
+import { BuscaPorNome } from "./busca";
 
 type Pessoa = {
   id: number;
@@ -15,6 +16,7 @@ type Pessoa = {
 };
 
 export default function AdminUsersPanel() {
+  
 
   const [modalTop, setModalTop] = useState<number | null>(null);
   const [isExit, setIsExit] = useState(false);
@@ -114,77 +116,105 @@ export default function AdminUsersPanel() {
     setOpen((prev) => ({ ...prev, [section]: !prev[section] }));
   }
 
-  function renderSection(
-    title: string,
-    sectionKey: keyof typeof open,
-    isOpen: boolean,
-    items: Pessoa[],
-    buttonText: string
-  ) {
-    return (
-      <div className="mb-4">
-        <Button
-          className="group flex justify-between items-center px-5 h-12 bg-pink2000 text-pink100 font-semibold rounded-xl w-full cursor-pointer transition-colors duration-300 hover:bg-pink3000 hover:text-pink4000 shadow"
-          onClick={() => toggle(sectionKey)}
-        >
-          <span>{title}</span>
-          {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-        </Button>
+  const [buscaUsuarios, setBuscaUsuarios] = useState("");
+  const [buscaProfissionais, setBuscaProfissionais] = useState("");
+  const [buscaEstagiarios, setBuscaEstagiarios] = useState("");
+  function filtrarPessoas(pessoas: Pessoa[], termoBusca: string) {
+    if (!termoBusca) return pessoas;
 
-        {isOpen && (
-          <>
-            <div className="mt-2 mb-2">
-              {sectionKey !== "usuarios" && (
-                <Button
-                  className="bg-pink2000 shadow text-pink1000 px-4 py-2 rounded-md hover:bg-pink1000 hover:text-pink2000 cursor-pointer transition-colors duration-300"
-                  onClick={() => handleAdicionarClick(sectionKey)}
-                >
-                  {buttonText}
-                </Button>
-              )}
-            </div>
-            <ul className="bg-pink1000 border border-pink1000 rounded-md shadow p-4">
-              {items.map((item) => (
-                <li key={item.id} className="mb-4">
-                  <div className="w-full h-px bg-pink3000 my-2" />
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-medium">{item.nome}</p>
-                      <p className="text-sm text-pink200">
-                        EMAIL: {item.email}
-                      </p>
-                      <p className="text-sm text-pink200">CPF: {item.cpf}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        className="bg-pink1000 text-pink2000 px-3 py-1 rounded-md shadow hover:bg-pink4000 hover:text-pink1000 transition-colors duration-300 cursor-pointer"
-                         onClick={() => {
-                  
-                            if (sectionKey === 'profissionais') router.push(`/profissional-cadastro/${item.cpf}`);
-                            if (sectionKey === 'estagiarios') router.push(`/estagiario-cadastro/${item.cpf}`);
-                          }}
-                        >
-                      
-                        Alterar
-                      </Button>
-                      <IconButton
-                        onClick={(e) =>
-                          handleDeleteClick(e, item.id, sectionKey)
-                        }
-                        className="p-1.5 bg-pink1000 text-pink4000 rounded-md cursor-pointer transition-colors duration-300 hover:text-red"
-                      >
-                        <Trash2 size={20} />
-                      </IconButton>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </div>
+    const lowerTerm = termoBusca.toLowerCase();
+
+    return pessoas.filter(({ nome, email, cpf }) =>
+      (nome?.toLowerCase() || "").includes(lowerTerm) ||
+      (email?.toLowerCase() || "").includes(lowerTerm) ||
+      (cpf?.toLowerCase() || "").includes(lowerTerm)
     );
   }
+
+
+function renderSection(
+  title: string,
+  sectionKey: keyof typeof open,
+  isOpen: boolean,
+  items: Pessoa[],
+  buttonText: string,
+  termoBusca: string,
+  setTermoBusca: React.Dispatch<React.SetStateAction<string>>
+) {
+  return (
+    <div className="mb-4">
+      <Button
+        className="group flex justify-between items-center px-5 h-12 bg-pink2000 text-pink100 font-semibold rounded-xl w-full cursor-pointer transition-colors duration-300 hover:bg-pink3000 hover:text-pink4000 shadow"
+        onClick={() => toggle(sectionKey)}
+      >
+        <span>{title}</span>
+        {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+      </Button>
+
+      {isOpen && (
+        <>
+        <div className="mt-2 mb-2 flex items-center justify-between gap-2">
+          
+          {sectionKey !== "usuarios" && (
+            <Button
+              className="bg-pink2000 shadow text-pink1000 px-4 py-2 rounded-md hover:bg-pink1000 hover:text-pink2000 cursor-pointer transition-colors duration-300"
+              onClick={() => handleAdicionarClick(sectionKey)}
+            >
+              {buttonText}
+            </Button>
+          )}
+          <BuscaPorNome
+            valor={termoBusca}
+            aoAlterar={setTermoBusca}
+            placeholder={`Busca por nome, email ou CPFem ${title.toLowerCase()}`}
+            className="flex-grow"
+          />
+
+        </div>
+        <div className="overflow-x-auto whitespace-nowrap overflow-y-auto max-h-64">
+
+          <ul className="bg-pink1000 border border-pink1000 rounded-md shadow p-4 ">
+            {items.map((item) => (
+              <li key={item.id} className="mb-4">
+                <div className="w-full h-px bg-pink3000 my-2" />
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="font-medium">{item.nome}</p>
+                    <p className="text-sm text-pink200">EMAIL: {item.email}</p>
+                    <p className="text-sm text-pink200">CPF: {item.cpf}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      className="bg-pink1000 text-pink2000 px-3 py-1 rounded-md shadow hover:bg-pink4000 hover:text-pink1000 transition-colors duration-300 cursor-pointer"
+                      onClick={() => {
+                        if (sectionKey === "profissionais")
+                          router.push(`/profissional-cadastro/${item.cpf}`);
+                        if (sectionKey === "estagiarios")
+                          router.push(`/estagiario-cadastro/${item.cpf}`);
+                      }}
+                    >
+                      Alterar
+                    </Button>
+                    <IconButton
+                      onClick={(e) =>
+                        handleDeleteClick(e, item.id, sectionKey)
+                      }
+                      className="p-1.5 bg-pink1000 text-pink4000 rounded-md cursor-pointer overflow-auto transition-colors duration-300 hover:text-red"
+                    >
+                      <Trash2 size={20} />
+                    </IconButton>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 
   
   return (
@@ -210,26 +240,35 @@ export default function AdminUsersPanel() {
         </div>
 
         {renderSection(
-          "Usuários",
-          "usuarios",
-          open.usuarios,
-          usuarios,
-          "Adicionar Usuário"
-        )}
-        {renderSection(
-          "Profissionais",
-          "profissionais",
-          open.profissionais,
-          profissionais,
-          "Adicionar Profissional"
-        )}
-        {renderSection(
-          "Estagiários",
-          "estagiarios",
-          open.estagiarios,
-          estagiarios,
-          "Adicionar Estagiário"
-        )}
+  "Usuários",
+  "usuarios",
+  open.usuarios,
+  filtrarPessoas(usuarios, buscaUsuarios),
+  "Adicionar Usuário",
+  buscaUsuarios,
+  setBuscaUsuarios
+)}
+
+{renderSection(
+  "Profissionais",
+  "profissionais",
+  open.profissionais,
+  filtrarPessoas(profissionais, buscaProfissionais),
+  "Adicionar Profissional",
+  buscaProfissionais,
+  setBuscaProfissionais
+)}
+
+{renderSection(
+  "Estagiários",
+  "estagiarios",
+  open.estagiarios,
+  filtrarPessoas(estagiarios, buscaEstagiarios),
+  "Adicionar Estagiário",
+  buscaEstagiarios,
+  setBuscaEstagiarios
+)}
+
       </div>
 
       {isExit && (
