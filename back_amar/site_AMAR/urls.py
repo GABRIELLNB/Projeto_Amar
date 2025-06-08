@@ -24,6 +24,8 @@ urlpatterns = [
     
     path('api/cadastro/', CadastroView.as_view(), name='cadastro'),
     path('api/cadastro-funcionario/', PreCadastroFuncionarioView.as_view(), name='cadastro-funcionario'),
+    path('api/precadastro/<str:tipo>/<str:cpf>/', PreCadastroFuncionarioView.as_view(), name='precadastro-funcionario'),
+
 
     path('api/usuarios/', UsuarioListView.as_view(), name='usuarios-list'),
     path('api/usuarios/<pk>/', UsuarioDetailView.as_view(), name='usuario-detail'),

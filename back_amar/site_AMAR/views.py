@@ -57,6 +57,13 @@ class CadastroView(APIView):
 
 # View para pré-cadastro de funcionários (profissional ou estagiário)
 # Também cadastra suas disponibilidades para atendimento
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.utils.dateparse import parse_date
+from django.contrib.contenttypes.models import ContentType
+from rest_framework.permissions import AllowAny
+
 class PreCadastroFuncionarioView(APIView):
     permission_classes = [AllowAny]
 
@@ -104,11 +111,9 @@ class PreCadastroFuncionarioView(APIView):
         for disp in disponibilidades:
             dia_str = disp.get('dia')
             horarios = disp.get('horarios', [])
-
             dia = parse_date(dia_str)
             if not dia:
                 continue
-
             for horario in horarios:
                 Disponibilidade.objects.create(
                     content_type=content_type,
@@ -120,41 +125,40 @@ class PreCadastroFuncionarioView(APIView):
                 )
 
         return Response({'detail': 'Pré-cadastro realizado com sucesso!'}, status=status.HTTP_201_CREATED)
-    
-    def put(self, request):
-        data = request.data
-        tipo = data.get('tipo')
-        cpf = normalizar_cpf(data.get('cpf', ''))
-        nome = data.get('nome')
-        matricula = data.get('matricula', '')
-        telefone = data.get('telefone', '')
-        tipo_servico = data.get('tipo_servico', '')
-        disponibilidades = data.get('disponibilidades', [])
-        local = data.get('local', None)
-        sala = data.get('sala', None)
 
-        # Buscar o objeto existente pelo CPF e tipo
+    def put(self, request, tipo, cpf):
+        if not cpf:
+            return Response({'error': 'CPF não informado na URL.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        data = request.data
+        cpf_normalizado = normalizar_cpf(cpf)
+
+        if cpf_normalizado != normalizar_cpf(data.get('cpf', '')):
+            return Response({'error': 'Não é permitido alterar o CPF.'}, status=status.HTTP_400_BAD_REQUEST)
+
         if tipo == 'profissional':
             try:
-                obj = Profissional.objects.get(cpf=cpf)
+                obj = Profissional.objects.get(cpf=cpf_normalizado)
             except Profissional.DoesNotExist:
                 return Response({'error': 'Profissional não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
         elif tipo == 'estagiario':
             try:
-                obj = Estagiario.objects.get(cpf=cpf)
+                obj = Estagiario.objects.get(cpf=cpf_normalizado)
             except Estagiario.DoesNotExist:
                 return Response({'error': 'Estagiário não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
         else:
             return Response({'error': 'Tipo inválido'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Atualizar os campos
-        obj.nome = nome
-        obj.matricula = matricula
-        obj.telefone = telefone
-        obj.tipo_servico = tipo_servico
+        obj.nome = data.get('nome', obj.nome)
+        obj.matricula = data.get('matricula', obj.matricula)
+        obj.telefone = data.get('telefone', obj.telefone)
+        obj.tipo_servico = data.get('tipo_servico', obj.tipo_servico)
         obj.save()
 
-        # Atualizar disponibilidades
+        disponibilidades = data.get('disponibilidades', [])
+        local = data.get('local', None)
+        sala = data.get('sala', None)
+
         content_type = ContentType.objects.get_for_model(obj)
         Disponibilidade.objects.filter(content_type=content_type, object_id=obj.id).delete()
 
@@ -175,6 +179,48 @@ class PreCadastroFuncionarioView(APIView):
                 )
 
         return Response({'detail': 'Funcionário atualizado com sucesso!'}, status=status.HTTP_200_OK)
+    def get(self, request, tipo, cpf):
+        cpf_normalizado = normalizar_cpf(cpf)
+
+        if tipo == 'profissional':
+            try:
+                obj = Profissional.objects.get(cpf=cpf_normalizado)
+            except Profissional.DoesNotExist:
+                return Response({'error': 'Profissional não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+        elif tipo == 'estagiario':
+            try:
+                obj = Estagiario.objects.get(cpf=cpf_normalizado)
+            except Estagiario.DoesNotExist:
+                return Response({'error': 'Estagiário não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({'error': 'Tipo inválido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Monta os dados para retornar
+        content_type = ContentType.objects.get_for_model(obj)
+        disponibilidades_qs = Disponibilidade.objects.filter(content_type=content_type, object_id=obj.id)
+
+        disponibilidades = []
+        for disp in disponibilidades_qs:
+            # Agrupando horários por dia, simplificado
+            dia_str = disp.dia.isoformat()
+            # aqui você pode organizar melhor os horários em listas por dia
+            disponibilidades.append({
+                'dia': dia_str,
+                'horario': disp.horario,
+                'local': disp.local,
+                'sala': disp.sala
+            })
+
+        data = {
+            'tipo': tipo,
+            'cpf': cpf_normalizado,
+            'nome': obj.nome,
+            'matricula': obj.matricula,
+            'telefone': obj.telefone,
+            'tipo_servico': obj.tipo_servico,
+            'disponibilidades': disponibilidades,
+        }
+        return Response(data, status=status.HTTP_200_OK)
 
 
 # LISTAGENS

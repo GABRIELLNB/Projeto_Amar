@@ -1,17 +1,22 @@
-'use client'
-
+'use client';
 import CadastroPessoa from '@/components/pessoa-cadastro'
+import React from 'react';
 
-export default function Estagiario() {
-  const handleCadastro = (dados: any) => {
-    console.log('Dados recebidos:', dados)
-    // Aqui envia pra API, salva ou exibe confirmação
+
+export default function ProfissionalEditar({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = React.use(params);
+  const id = resolvedParams.id;
+
+  async function handleSubmit(data: any) {
+    // Exemplo: redirecionar após submit
+    // router.push('/profissionais');
   }
 
   return (
-    <div className="p-6 space-y-10">
-    
-      <CadastroPessoa type="estagiario" onSubmit={handleCadastro} />
-    </div>
-  )
+    <CadastroPessoa
+      type="estagiario"
+      editarCpf={id}
+      onSubmit={handleSubmit}
+    />
+  );
 }

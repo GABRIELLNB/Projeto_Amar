@@ -160,8 +160,8 @@ export default function AdminUsersPanel() {
                         className="bg-pink1000 text-pink2000 px-3 py-1 rounded-md shadow hover:bg-pink4000 hover:text-pink1000 transition-colors duration-300 cursor-pointer"
                          onClick={() => {
                   
-                            if (sectionKey === 'profissionais') router.push(`/profissional-cadastro/${item.id}`);
-                            if (sectionKey === 'estagiarios') router.push(`/estagiario-cadastro/${item.id}`);
+                            if (sectionKey === 'profissionais') router.push(`/profissional-cadastro/${item.cpf}`);
+                            if (sectionKey === 'estagiarios') router.push(`/estagiario-cadastro/${item.cpf}`);
                           }}
                         >
                       
