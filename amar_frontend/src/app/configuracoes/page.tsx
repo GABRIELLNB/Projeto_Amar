@@ -1,9 +1,9 @@
-'use client'
+"use client";
 
-import { Button, ButtonField, ButtonIcon } from '@/components/button'
-import { IconButton } from '@/components/icon-button'
-import { InputField, InputIcon, InputRoot } from '@/components/input'
-import SidebarMenu from '@/components/sidebar-menu'
+import { Button, ButtonField, ButtonIcon } from "@/components/button";
+import { IconButton } from "@/components/icon-button";
+import { InputField, InputIcon, InputRoot } from "@/components/input";
+import SidebarMenu from "@/components/sidebar-menu";
 import {
   ArrowLeft,
   ArrowRight,
@@ -23,23 +23,39 @@ import {
   User,
   UserLock,
   UserRoundPen,
-} from 'lucide-react'
-import { useEffect, useState } from 'react'
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function Configuracoes() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isCheck, setIsCheck] = useState(false)
-  const [isInfo, setIsInfo] = useState(false)
-  const [isPolicy, setIsPolicy] = useState(false)
-  const [isHelpOpen, setIsHelpOpen] = useState(false)
-  const [isExit, setIsExit] = useState(false)
+  const router = useRouter();
+  const [isCheck, setIsCheck] = useState(false);
+  const [isInfo, setIsInfo] = useState(false);
+  const [isPolicy, setIsPolicy] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isExit, setIsExit] = useState(false);
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-  }
+  const handleLogout = () => {
+    // Limpar dados de autenticação
+    localStorage.removeItem("token"); // ou sessionStorage.clear(), etc.
 
-  const [userType, setUserType] = useState<"profissional" | "estagiario" | "outro">("outro");
+    // Redirecionar sem deixar rastros no histórico
+    router.replace("/");
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      alert("Copiado para a área de transferência!");
+    } catch (err) {
+      alert("Erro ao copiar.");
+      console.error("Falha ao copiar: ", err);
+    }
+  };
+
+  const [userType, setUserType] = useState<
+    "profissional" | "estagiario" | "outro"
+  >("outro");
   const [userName, setUserName] = useState<string>("");
 
   useEffect(() => {
@@ -54,11 +70,13 @@ export default function Configuracoes() {
     setUserName(storedUserName);
   }, []);
 
-  
   return (
     <div>
-      <SidebarMenu userType={userType}
-        userName={userName} activeItem="Configurações"/>
+      <SidebarMenu
+        userType={userType}
+        userName={userName}
+        activeItem="Configurações"
+      />
 
       <div className="ml-[360px] p-6 relative">
         <div className="gap-6 mt-[-50] px-6">
@@ -73,17 +91,31 @@ export default function Configuracoes() {
             </div>
             <div className="bg-pink1000 rounded-xl shadow-md p-6 w-full max-w-full overflow-auto max-h-screen mt-8">
               {[
-                { icon: <UserLock />, label: 'Permissões', onClick: () => setIsCheck(true) },
-                { icon: <Info />, label: 'Entenda Mais', onClick:() => setIsInfo(true) },
-                { icon: <FileCheck2 />, label: 'Termos e Política', onClick: () => setIsPolicy(true) },
+                /*
+                {
+                  icon: <UserLock />,
+                  label: "Permissões",
+                  onClick: () => setIsCheck(true),
+                },
+                 */
+                {
+                  icon: <Info />,
+                  label: "Entenda Mais",
+                  onClick: () => setIsInfo(true),
+                },
+                {
+                  icon: <FileCheck2 />,
+                  label: "Termos e Política",
+                  onClick: () => setIsPolicy(true),
+                },
                 {
                   icon: <HelpCircle />,
-                  label: 'Ajuda',
+                  label: "Ajuda",
                   onClick: () => setIsHelpOpen(true),
                 },
                 {
                   icon: <LogOut />,
-                  label: 'Sair da Conta',
+                  label: "Sair da Conta",
                   onClick: () => setIsExit(true),
                 },
               ].map((item, index) => (
@@ -109,6 +141,7 @@ export default function Configuracoes() {
         </div>
       </div>
 
+      {/*ACHO MELHOR TIRAR */}
       {/*PERMISSÕES */}
       {isCheck && (
         <>
@@ -116,9 +149,9 @@ export default function Configuracoes() {
             role="button"
             tabIndex={0}
             onClick={() => setIsCheck(false)}
-            onKeyDown={e => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                setIsCheck(false)
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                setIsCheck(false);
               }
             }}
             className="fixed inset-0 z-40 backdrop-blur-sm"
@@ -157,7 +190,6 @@ export default function Configuracoes() {
           </div>
         </>
       )}
-
       {/*ENTENDA MAIS */}
       {isInfo && (
         <>
@@ -165,9 +197,9 @@ export default function Configuracoes() {
             role="button"
             tabIndex={0}
             onClick={() => setIsInfo(false)}
-            onKeyDown={e => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                setIsInfo(false)
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                setIsInfo(false);
               }
             }}
             className="fixed inset-0 z-40 backdrop-blur-sm"
@@ -175,7 +207,7 @@ export default function Configuracoes() {
 
           {/* Pop-up acima da camada transparente */}
           <div className="fixed top-1/2 left-[60%] transform -translate-x-1/2 -translate-y-1/2 z-50">
-            <div className="relative bg-pink1000 rounded-2xl shadow-lg p-6 w-[90vw] max-w-sm h-[300px] border border-pink4000">
+            <div className="relative bg-pink1000 rounded-2xl shadow-lg p-6 w-[105vw] max-w-lg h-[330px] border border-pink4000">
               <div className="absolute top-4 left-1">
                 <IconButton
                   onClick={() => setIsInfo(false)}
@@ -187,14 +219,38 @@ export default function Configuracoes() {
 
               <div className="bg-pink2000 w-full h-4 absolute top-[-1] left-0 rounded-t-2xl border border-pink4000" />
 
-              <h2 className="text-xl font-bold mb-10 text-pink4000 text-center">
+              <h2 className="text-xl font-bold mb-8 text-pink4000 text-center">
                 Entenda Mais
               </h2>
-
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-pink4000 text-sm">
-                  AMAR É UM SITE DE EVBTB RTGR TGTR RGT TGT TGR RGR TRGRRGTR R GRY  6YNYUN6N 6NUN  6 H6H6 H6 6 6J7J7 J7 YGF SJDBAVB VHABVUEBVHHA VBUEBVEBVU DJFJFJNVHBHUV VEFEUFEINCHE CEHH CREHNFWIBUE WUDHWUIDIWNRU
-                </span>
+              <h3 className="mb-2 text-pink2000">O que é o A.M.A.R ?</h3>
+              <div className="flex items-center justify-between mb-2">
+                <div className="overflow-y-auto max-h-[140px] px-2 text-justify text-pink4000 text-sm">
+                  A.M.A.R. é uma plataforma inclusiva e acolhedora, que foi
+                  criada especialmente para oferecer apoio e promover as
+                  conexões dentro da comunidade LGBTQIAPN+. Mais do que um
+                  simples espaço online, a plataforma representa um ambiente
+                  seguro e cheio de possibilidades, onde você vai poder
+                  compartilhar experiências, buscar ajuda e encontrar
+                  profissionais especializados para lidar com questões
+                  essenciais da vida. Vai ser possível também participar de um
+                  fórum aberto e colaborativo, onde vai te permitir a
+                  possibilidade de trocar histórias, desabafos, conquistas e
+                  aprendizados, fortalecendo o sentimento de pertencimento e
+                  união. Além disso, a plataforma vai permitir interações mais
+                  direcionadas e um suporte ainda mais eficaz para cada
+                  necessidade. Outro recurso essencial é a funcionalidade de
+                  agendamento de serviços, que torna possível marcar consultas
+                  com psicólogos, médicos e estagiários parceiros com total
+                  conveniência. E para garantir uma experiência completa, a
+                  A.M.A.R vai te oferecer o acompanhamento de todos os
+                  agendamentos, enviando lembretes e notificações que ajudam a
+                  manter o controle das consultas e facilitam o planejamento de
+                  novos atendimentos, conforme a necessidade de cada pessoa. Com
+                  um compromisso cuidado, a plataforma também disponibiliza
+                  consultoria online com profissionais especializados em
+                  diversas áreas que vão te proporcionar orientações práticas e
+                  acessíveis para a comunidade.
+                </div>
               </div>
 
               {/* Botão centralizado */}
@@ -217,9 +273,9 @@ export default function Configuracoes() {
             role="button"
             tabIndex={0}
             onClick={() => setIsPolicy(false)}
-            onKeyDown={e => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                setIsPolicy(false)
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                setIsPolicy(false);
               }
             }}
             className="fixed inset-0 z-40 backdrop-blur-sm"
@@ -227,7 +283,7 @@ export default function Configuracoes() {
 
           {/* Pop-up acima da camada transparente */}
           <div className="fixed top-1/2 left-[60%] transform -translate-x-1/2 -translate-y-1/2 z-50">
-            <div className="relative bg-pink1000 rounded-2xl shadow-lg p-6 w-[90vw] max-w-sm h-[300px] border border-pink4000">
+            <div className="relative bg-pink1000 rounded-2xl shadow-lg p-6 w-[90vw] max-w-lg h-[330px] border border-pink4000">
               <div className="absolute top-4 left-1">
                 <IconButton
                   onClick={() => setIsPolicy(false)}
@@ -239,14 +295,39 @@ export default function Configuracoes() {
 
               <div className="bg-pink2000 w-full h-4 absolute top-[-1] left-0 rounded-t-2xl border border-pink4000" />
 
-              <h2 className="text-xl font-bold mb-10 text-pink4000 text-center">
-              Termos e Permissões
+              <h2 className="text-xl font-bold mb-8 text-pink4000 text-center">
+                Termos e Permissões
               </h2>
 
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-pink4000 text-sm">
-                  É jknfncna snajfakbf asjkfbbfaei fajhsbfrufuia fdsakfhsdhf shfkabfiaua fgasfjguyeafe fauyfguyavef abfjbuyvuefaf bjhabfbaefjbaef aefg uaegfuyaegfa faghahgueruba ghgjaughaurh giurebgbrbghrb ghghaighur huahogagbjdnknfkjsb gsgsdg io ernigankg 
-                </span>
+              <h3 className="mb-2 text-pink2000">Termos?</h3>
+              <div className="flex items-center justify-between mb-2">
+                <div className="overflow-y-auto max-h-[140px] px-2 text-justify text-pink4000 text-sm">
+                  A.M.A.R. é uma plataforma inclusiva e acolhedora, que foi
+                  criada especialmente para oferecer apoio e promover as
+                  conexões dentro da comunidade LGBTQIAPN+. Mais do que um
+                  simples espaço online, a plataforma representa um ambiente
+                  seguro e cheio de possibilidades, onde você vai poder
+                  compartilhar experiências, buscar ajuda e encontrar
+                  profissionais especializados para lidar com questões
+                  essenciais da vida. Vai ser possível também participar de um
+                  fórum aberto e colaborativo, onde vai te permitir a
+                  possibilidade de trocar histórias, desabafos, conquistas e
+                  aprendizados, fortalecendo o sentimento de pertencimento e
+                  união. Além disso, a plataforma vai permitir interações mais
+                  direcionadas e um suporte ainda mais eficaz para cada
+                  necessidade. Outro recurso essencial é a funcionalidade de
+                  agendamento de serviços, que torna possível marcar consultas
+                  com psicólogos, médicos e estagiários parceiros com total
+                  conveniência. E para garantir uma experiência completa, a
+                  A.M.A.R vai te oferecer o acompanhamento de todos os
+                  agendamentos, enviando lembretes e notificações que ajudam a
+                  manter o controle das consultas e facilitam o planejamento de
+                  novos atendimentos, conforme a necessidade de cada pessoa. Com
+                  um compromisso cuidado, a plataforma também disponibiliza
+                  consultoria online com profissionais especializados em
+                  diversas áreas que vão te proporcionar orientações práticas e
+                  acessíveis para a comunidade.
+                </div>
               </div>
 
               {/* Botão centralizado */}
@@ -269,9 +350,9 @@ export default function Configuracoes() {
             role="button"
             tabIndex={0}
             onClick={() => setIsHelpOpen(false)}
-            onKeyDown={e => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                setIsHelpOpen(false)
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                setIsHelpOpen(false);
               }
             }}
             className="fixed inset-0 z-40 backdrop-blur-sm"
@@ -306,10 +387,10 @@ export default function Configuracoes() {
               <div className="flex items-center justify-between mb-2">
                 <span className="text-pink4000 text-sm">
                   Email: <br />
-                  lmaafhagdafywfef@gmail.com
+                  amar@gmail.com
                 </span>
                 <IconButton
-                  onClick={() => copyToClipboard('lmaafhagdafywfef@gmail.com')}
+                  onClick={() => copyToClipboard("amar@gmail.com")}
                 >
                   <Copy className="w-4 h-4 text-pink4000 hover:text-pink3000" />
                 </IconButton>
@@ -318,9 +399,9 @@ export default function Configuracoes() {
               <div className="flex items-center justify-between mb-4">
                 <span className="text-pink4000 text-sm">
                   Telefone: <br />
-                  5555555-54654565
+                  (73) 98873-1234
                 </span>
-                <IconButton onClick={() => copyToClipboard('5555555-54654565')}>
+                <IconButton onClick={() => copyToClipboard("(73) 98873-1234")}>
                   <Copy className="w-4 h-4 text-pink4000 hover:text-pink3000" />
                 </IconButton>
               </div>
@@ -346,53 +427,55 @@ export default function Configuracoes() {
             role="button"
             tabIndex={0}
             onClick={() => setIsExit(false)}
-            onKeyDown={e => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                setIsExit(false)
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                setIsExit(false);
               }
             }}
             className="fixed inset-0 z-40 backdrop-blur-sm"
           />
-        <div className="absolute top-1/2 left-[60%] transform -translate-x-1/2 -translate-y-1/2 z-50">
-          <div className="bg-pink1000 rounded-2xl shadow-lg p-6 w-[90vw] max-w-sm h-[200px] border border-pink4000">
-            <div className="absolute top-4 left-1">
-              <IconButton
-                onClick={() => setIsExit(false)}
-                className="p-1.5 bg-pink1000 text-pink4000 rounded-md cursor-pointer transition-colors duration-300 hover:text-pink2000"
-              >
-                <ArrowLeft />
-              </IconButton>
-            </div>
-            <div className="bg-pink2000 w-full h-4 absolute top-0 left-0 rounded-t-2xl border border-pink4000" />
-            <h2 className="text-xl font-bold mb-10 text-pink4000 text-center">
-              Sair da Conta
-            </h2>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-pink4000 text-sm">Deseja mesmo sair?</span>
-            </div>
-
-            <div className="flex justify-center mb-2 gap-2">
-              <div>
-                <Button
+          <div className="absolute top-1/2 left-[60%] transform -translate-x-1/2 -translate-y-1/2 z-50">
+            <div className="bg-pink1000 rounded-2xl shadow-lg p-6 w-[90vw] max-w-sm h-[200px] border border-pink4000">
+              <div className="absolute top-4 left-1">
+                <IconButton
                   onClick={() => setIsExit(false)}
-                  className="bg-pink2000 text-pink1000 border border-pink2000 px-4 py-2 rounded-xl w-30  transition-colors duration-300 hover:bg-pink3000 hover:text-pink2000 cursor-pointer"
+                  className="p-1.5 bg-pink1000 text-pink4000 rounded-md cursor-pointer transition-colors duration-300 hover:text-pink2000"
                 >
-                  Cancelar
-                </Button>
+                  <ArrowLeft />
+                </IconButton>
               </div>
-              <div>
-                <Button
-                  onClick={() => setIsExit(false)}
-                  className="bg-red text-pink1000 border border-red px-4 py-2 rounded-xl w-30  transition-colors duration-300 hover:bg-pink3000 hover:text-red cursor-pointer"
-                >
-                  Sair
-                </Button>
+              <div className="bg-pink2000 w-full h-4 absolute top-0 left-0 rounded-t-2xl border border-pink4000" />
+              <h2 className="text-xl font-bold mb-10 text-pink4000 text-center">
+                Sair da Conta
+              </h2>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-pink4000 text-sm">
+                  Deseja mesmo sair?
+                </span>
+              </div>
+
+              <div className="flex justify-center mb-2 gap-2">
+                <div>
+                  <Button
+                    onClick={() => setIsExit(false)}
+                    className="bg-pink2000 text-pink1000 border border-pink2000 px-4 py-2 rounded-xl w-30  transition-colors duration-300 hover:bg-pink3000 hover:text-pink2000 cursor-pointer"
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+                <div>
+                  <Button
+                    onClick={handleLogout}
+                    className="bg-red text-pink1000 border border-red px-4 py-2 rounded-xl w-30  transition-colors duration-300 hover:bg-pink3000 hover:text-red cursor-pointer"
+                  >
+                    Sair
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
         </>
       )}
     </div>
-  )
+  );
 }

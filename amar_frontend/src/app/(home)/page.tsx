@@ -20,6 +20,8 @@ type LoginSchema = z.infer<typeof loginSchema>
 export default function Home() {
   const router = useRouter()
 
+  
+
   const {
     register,
     handleSubmit,
@@ -145,7 +147,7 @@ async function onLogin(data: LoginSchema) {
             <span className="text-pink2000">Precisando de uma conta?</span>
             <Button
               type="button"
-              onClick={() => router.push('/cadastro')}
+              onClick={() => router.replace('/cadastro')}
               className="ml-1 text-blue1000 text-sm hover:underline transition-colors duration-300 cursor-pointer text-[13px]"
             >
               Registre-se

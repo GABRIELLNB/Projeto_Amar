@@ -590,40 +590,6 @@ class DatasDisponiveisView(APIView):
 
         return Response(list(datas_unicas))
 
-    
-    
-"""
-from django.db.models import Q
-from django.shortcuts import render
-from .models import Usuario, Profissional, Estagiario, Disponibilidade, Agendamento, Forums, MensagemForum
-
-class BuscaGeralView(APIView):
-    def get(self, request):
-        q = request.GET.get('q', '').strip()
-        if not q:
-            return Response([])
-
-        queryset = Disponibilidade.objects.filter(
-            Q(horario__icontains=q) |
-            Q(local__icontains=q) |
-            Q(sala__icontains=q) |
-            Q(atendente__nome__icontains=q) |
-            Q(atendente__tipo_servico__icontains=q)
-        )
-
-        resultados = []
-        for disp in queryset:
-            resultados.append({
-                'id': disp.id,
-                'horario': disp.horario,
-                'atendente_nome': disp.atendente.nome,
-                'servico': getattr(disp.atendente, 'tipo_servico', ''),
-                'local': disp.local,
-                'sala': disp.sala,
-            })
-
-        return Response(resultados)
-"""
 
 ''' #Não sei se via usar isso porque separei as viwes para organizar
 class ForumDetailView(APIView):

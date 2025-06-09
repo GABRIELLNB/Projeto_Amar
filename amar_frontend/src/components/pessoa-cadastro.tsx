@@ -1,5 +1,5 @@
 "use client";
-
+import { MaskedInputField } from "@/components/mask";
 import { Button, ButtonField } from "@/components/button";
 import { InputField, InputIcon, InputRoot } from "@/components/input";
 import {
@@ -234,34 +234,49 @@ const addHorario = (index: number) => {
     };
 
     const renderInput = (
-      label: string,
-      name: keyof typeof formData,
-      required = true
-    ) => (
-      <div className="flex flex-col gap-1" key={name}>
-        <label htmlFor={name} className="text-sm text-pink4000 font-medium">
-          {label}
-        </label>
-        <InputRoot>
-          <InputIcon>{fieldIcons[name]}</InputIcon>
-          <InputField
-            id={name}
-            name={name}
-            required={required}
-            placeholder={label}
-            value={typeof formData[name] === "string" ? formData[name] : ""}
-            onChange={handleChange}
-          />
-        </InputRoot>
-        {errors[name] && (
-          <p className="text-red-500 text-xs mt-1">
-            {Array.isArray(errors[name])
-              ? errors[name].join(", ")
-              : errors[name]}
-          </p>
-        )}
-      </div>
-    );
+  label: string,
+  name: keyof typeof formData,
+  required = true
+) => (
+  <div className="flex flex-col gap-1" key={name}>
+    <label htmlFor={name} className="text-sm text-pink4000 font-medium">
+      {label}
+    </label>
+    <InputRoot>
+      <InputIcon>{fieldIcons[name]}</InputIcon>
+
+      {name === "cpf" || name === "telefone" ? (
+        <MaskedInputField
+          mask={name === "cpf" ? "000.000.000-00" : "(00) 0000-0000"}
+          guide={false}
+          id={name}
+          name={name}
+          required={required}
+          placeholder={label}
+          className="bg-transparent outline-none flex-1 text-black placeholder-pink2000"
+          value={typeof formData[name] === "string" ? formData[name] : ""}
+          onChange={handleChange}
+        />
+      ) : (
+        <InputField
+          id={name}
+          name={name}
+          required={required}
+          placeholder={label}
+          value={typeof formData[name] === "string" ? formData[name] : ""}
+          onChange={handleChange}
+        />
+      )}
+    </InputRoot>
+    {errors[name] && (
+      <p className="text-red-500 text-xs mt-1">
+        {Array.isArray(errors[name])
+          ? errors[name].join(", ")
+          : errors[name]}
+      </p>
+    )}
+  </div>
+);
 
     const router = useRouter();
     return (
@@ -281,24 +296,7 @@ const addHorario = (index: number) => {
         </div>
 
         <div className="flex flex-col md:flex-row w-full bg-pink1000 p-6 gap-8 items-center justify-center min-h-screen pt-24">
-          <div className="flex flex-col justify-center items-center rounded-xl bg-pink1000 p-4 shadow-md w-80 h-70 border border-pink3000">
-            <div className="flex flex-col justify-center items-center rounded-full bg-pink1000 p-4 shadow-md w-40 h-40 border border-pink3000">
-              <IconButton className="bg-pink1000 text-pink4000 hover:text-pink4000 flex items-center justify-center transition-colors duration-300">
-                <User size={100} />
-              </IconButton>
-            </div>
 
-            <div className="w-3/4 h-px bg-pink3000 my-4" />
-
-            <div className="flex mt-2 gap-15">
-              <IconButton className="bg-pink1000 text-pink4000 hover:text-pink4000 flex items-center justify-center transition-colors duration-300">
-                <ImageDown />
-              </IconButton>
-              <IconButton className="bg-pink1000 text-pink4000 hover:text-pink4000 flex items-center justify-center transition-colors duration-300">
-                <Camera />
-              </IconButton>
-            </div>
-          </div>
 {formData && (
           <form
             onSubmit={handleSubmit}
@@ -306,7 +304,7 @@ const addHorario = (index: number) => {
             noValidate
           >
             <h2 className="text-2xl font-bold text-pink4000">
-              Cadastro de{" "}
+              {editarCpf ? "Alteração de " : "Cadastro de "}
               {type === "profissional" ? "Profissional" : "Estagiário"}
             </h2>
 
