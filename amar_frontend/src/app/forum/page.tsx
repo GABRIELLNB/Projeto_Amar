@@ -38,7 +38,6 @@ type Mensagem = {
   };
   mensagem: string;
   data_envio: string; // timestamp da mensagem
-
 };
 
 type ForumProps = {
@@ -46,7 +45,11 @@ type ForumProps = {
   inicialmenteGostei: boolean;
   inicialmenteQuantidade: number;
 };
-export default function Forum({ forumId,  inicialmenteGostei, inicialmenteQuantidade }: ForumProps) {
+export default function Forum({
+  forumId,
+  inicialmenteGostei,
+  inicialmenteQuantidade,
+}: ForumProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [sidebarWidth, setSidebarWidth] = useState(350);
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -93,8 +96,9 @@ export default function Forum({ forumId,  inicialmenteGostei, inicialmenteQuanti
     };
   }, [resize, stopResizing]);
 
-
-  const [selectedForum, setSelectedForum] = useState<ForumsDisponiveis | null>(null);
+  const [selectedForum, setSelectedForum] = useState<ForumsDisponiveis | null>(
+    null
+  );
   const [foruns, setForuns] = useState<ForumsDisponiveis[]>([]);
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -112,40 +116,40 @@ export default function Forum({ forumId,  inicialmenteGostei, inicialmenteQuanti
       .catch((err) => console.error("Erro ao buscar fóruns:", err));
   }, []);
 
-
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
 
-useEffect(() => {
-  if (!selectedForum) {
-    setMensagens([]);
-    return;
-  }
+  useEffect(() => {
+    if (!selectedForum) {
+      setMensagens([]);
+      return;
+    }
 
-  const token = localStorage.getItem("token");
-  fetch(`http://localhost:8000/api/mensagem-forum/forum/${selectedForum.id}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-    .then((res) => {
-      if (!res.ok) throw new Error(`Erro ${res.status}`);
-      return res.json();
-    })
-  .then((data) => {
-  console.log("Mensagens recebidas:", data);
-  setMensagens(Array.isArray(data) ? data : data ? [data] : []);
-})
-    .catch((err) => console.error("Erro ao buscar mensagens:", err));
-}, [selectedForum]);
+    const token = localStorage.getItem("token");
+    fetch(
+      `http://localhost:8000/api/mensagem-forum/forum/${selectedForum.id}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    )
+      .then((res) => {
+        if (!res.ok) throw new Error(`Erro ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        console.log("Mensagens recebidas:", data);
+        setMensagens(Array.isArray(data) ? data : data ? [data] : []);
+      })
+      .catch((err) => console.error("Erro ao buscar mensagens:", err));
+  }, [selectedForum]);
   // Caso a API não filtre por fórum, filtra aqui
-const mensagensDoForum = mensagens.filter(
-  (m) => m.forum === selectedForum?.id
-);
+  const mensagensDoForum = mensagens.filter(
+    (m) => m.forum === selectedForum?.id
+  );
 
-const bottomRef = useRef<HTMLDivElement>(null);
-useEffect(() => {
-  bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-}, [mensagensDoForum]);
-
-
+  const bottomRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [mensagensDoForum]);
 
   const [novoTitulo, setNovoTitulo] = useState("");
   const [novaDescricao, setNovaDescricao] = useState("");
@@ -187,18 +191,71 @@ useEffect(() => {
       console.error("Erro ao conectar com o servidor:", error);
     }
   };
-const [curtidasState, setCurtidasState] = useState<{ [forumId: number]: { gostei: boolean; quantidade: number } }>({});
+  const [curtidasState, setCurtidasState] = useState<{
+    [forumId: number]: { gostei: boolean; quantidade: number };
+  }>({});
 
-useEffect(() => {
-  if (foruns.length > 0) {
-    const estadoInicial: { [forumId: number]: { gostei: boolean; quantidade: number } } = {};
-    for (const forum of foruns) {
-      estadoInicial[forum.id] = { gostei: forum.curtiu, quantidade: forum.total_curtidas };
+  useEffect(() => {
+    if (foruns.length > 0) {
+      const estadoInicial: {
+        [forumId: number]: { gostei: boolean; quantidade: number };
+      } = {};
+      for (const forum of foruns) {
+        estadoInicial[forum.id] = {
+          gostei: forum.curtiu,
+          quantidade: forum.total_curtidas,
+        };
+      }
+      setCurtidasState(estadoInicial);
     }
-    setCurtidasState(estadoInicial);
+  }, [foruns]);
+
+  // controla se o modal está aberto
+  const [excluirModal, setExcluirModal] = useState(false);
+
+  // guarda qual fórum o usuário clicou para excluir
+  const [forumParaExcluir, setForumParaExcluir] =
+    useState<ForumsDisponiveis | null>(null);
+
+  async function excluirForum(forumId: number) {
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(`http://localhost:8000/api/forum/${forumId}/`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.status === 204) {
+        // remove da lista local
+        setForuns((prev) => prev.filter((f) => f.id !== forumId));
+        // fecha o modal e limpa seleção
+        setExcluirModal(false);
+        setForumParaExcluir(null);
+        // se estava selecionado, limpa
+        if (selectedForum?.id === forumId) setSelectedForum(null);
+      } else {
+        alert("Erro ao excluir fórum");
+      }
+    } catch (err) {
+      console.error("Erro ao excluir fórum", err);
+    }
   }
-}, [foruns]);
+
+  const [buscaForuns, setBuscaForuns] = useState("");
+  function filtrarForuns(foruns: Forum[], termoBusca: string) {
+  if (!termoBusca) return foruns;
+
+  const lowerTerm = termoBusca.toLowerCase();
+
+  return foruns.filter(({ nome, criador }) =>
+    (nome?.toLowerCase() || "").includes(lowerTerm) ||
+    (criador?.nome?.toLowerCase() || "").includes(lowerTerm)
+  );
+}
+
+
   const userName = localStorage.getItem("user_name") || "";
+
   return (
     <>
       {/* Sidebar */}
@@ -218,16 +275,20 @@ useEffect(() => {
           >
             <ArrowLeft />
           </IconButton>
-          <h1 className="text-pink1000 text-2xl font-semibold ml-5">FÓRUNS</h1>
+          <h1 className="text-pink1000 justify-between text-2xl font-semibold ml-5">FÓRUNS</h1>
         </div>
 
         {/* Busca sticky logo abaixo */}
         <div className="sticky top-20 z-40 bg-pink3000 p-2 border-b border-pink3000 ">
-          <BuscaPorNome
-            valor=""
-            aoAlterar={() => {}}
-            placeholder="Buscar Fórum"
-          />
+          
+  <BuscaPorNome
+    valor={buscaForuns}
+    aoAlterar={setBuscaForuns}
+    placeholder="Buscar por nome do fórum ou criador"
+    className="max-w-xs"
+  />
+
+
         </div>
 
         {/* Botões*/}
@@ -236,7 +297,6 @@ useEffect(() => {
             {["Fóruns", "Meus Fóruns"].map((label, index) => (
               <Button
                 key={index}
-                
                 className={`px-4 py-2 text-sm  font-medium  cursor-pointer focus:outline-none ${
                   tabAtiva === index
                     ? "border-b-2 border-pink2000 text-pink2000 font-semibold cursor-pointer items-center justify-center"
@@ -255,77 +315,100 @@ useEffect(() => {
           <div className="flex space-x-4">
             {tabAtiva === 0 && (
               <div className="flex-1 space-y-4">
-                {foruns
-                  .filter((forum) => forum.criador.nome !== userName) // todos menos os seus
-                  .map((forum) => (
-                    <Button
-                      key={forum.id}
+                 {filtrarForuns(
+      foruns.filter((forum) => forum.criador.nome !== userName),
+      buscaForuns
+    ).map((forum) => (
+      <Button key={forum.id}
                       onClick={() => setSelectedForum(forum)}
-                      className="relative group rounded-br-none flex justify-between cursor-pointer rounded-2xl border border-pink1000 items-start px-6 pt-4 pb-10 bg-pink1000 text-pink2000 font-semibold w-full"
+                      className="relative group rounded-br-none flex justify-between cursor-pointer rounded-2xl border border-pink1000 items-start px-6 pt-4 pb-8 bg-pink1000 text-pink2000 font-semibold w-full"
                     >
                       <span className="text-left">
-                        <strong>{forum.nome}</strong> <br />
-                        <div className="absolute bottom-[-4] left-0 scale-55 text-pink4000">
+                        <div className="absolute top-1 left-6 scale-75 text-pink4000 mb-4">
+                          {forum.criador.nome}
+                        </div>
+                        <strong className="block mt-2">{forum.nome}</strong>{" "}
+                        <br />
+                        <div className="absolute bottom-[-4] left-0 scale-55 mb-1 text-pink4000">
                           {forum.publicacao}
                         </div>
                       </span>
 
                       <div className="absolute bottom-0 right-1 scale-70">
-                   
-<BotaoGostei
-  forumId={forum.id}
-  inicialmenteGostei={curtidasState[forum.id]?.gostei ?? false}
-  inicialmenteQuantidade={curtidasState[forum.id]?.quantidade ?? 0}
-  onCurtirChange={(novoGostei, novaQuantidade) => {
-    setCurtidasState(prev => ({
-      ...prev,
-      [forum.id]: { gostei: novoGostei, quantidade: novaQuantidade }
-    }));
-  }}
-/>
+                        <BotaoGostei
+                          forumId={forum.id}
+                          inicialmenteGostei={
+                            curtidasState[forum.id]?.gostei ?? false
+                          }
+                          inicialmenteQuantidade={
+                            curtidasState[forum.id]?.quantidade ?? 0
+                          }
+                          onCurtirChange={(novoGostei, novaQuantidade) => {
+                            setCurtidasState((prev) => ({
+                              ...prev,
+                              [forum.id]: {
+                                gostei: novoGostei,
+                                quantidade: novaQuantidade,
+                              },
+                            }));
+                          }}
+                        />
                       </div>
                     </Button>
+                    
                   ))}
               </div>
             )}
 
             {tabAtiva === 1 && (
               <div className="flex-1 space-y-4">
-                {foruns
-                  .filter((forum) => forum.criador.nome === userName) // só seus fóruns
-                  .map((forum) => (
-                    <Button
-                      key={forum.id}
+                                {filtrarForuns(
+      foruns.filter((forum) => forum.criador.nome === userName),
+      buscaForuns
+    ).map((forum) => (
+      <Button key={forum.id}
                       onClick={() => setSelectedForum(forum)}
-                      className="relative group rounded-br-none flex justify-between shadow transition-colors duration-300 hover:border-pink2000 rounded-2xl border cursor-pointer border-pink1000 items-start px-6 pt-4 pb-10 bg-pink1000 text-pink2000 font-semibold w-full"
+                      className="relative group rounded-br-none flex justify-between shadow transition-colors duration-300 hover:border-pink2000 rounded-2xl border cursor-pointer border-pink1000 items-start px-6 pt-4 pb-8 bg-pink1000 text-pink2000 font-semibold w-full"
                     >
                       <span className="text-left">
-                        <strong>{forum.nome}</strong> <br />
-                        <div className="absolute bottom-[-4] left-0 scale-55 text-pink4000">
+                        <div className="absolute top-1 left-6 scale-75 text-pink4000 mb-4">
+                          {forum.criador.nome}
+                        </div>
+                        <strong className="block mt-2">{forum.nome}</strong>{" "}
+                        <br />
+                        <div className="absolute bottom-[-4] left-0 scale-55 mb-1 text-pink4000">
                           {forum.publicacao}
                         </div>
                       </span>
                       <IconButton
                         className="absolute top-2 right-2 p-1.5 bg-pink1000 text-red rounded-md cursor-pointer transition-colors duration-300 hover:text-pink4000"
-                        onClick={() => {
-                          // ação ao clicar no X
+                        onClick={(e) => {
+                          e.stopPropagation(); // evita selecionar o fórum
+                          setForumParaExcluir(forum); // guarda qual vai excluir
+                          setExcluirModal(true); // abre modal
                         }}
                       >
                         <CircleX size={15} />
                       </IconButton>
                       <div className="absolute bottom-0 right-1 scale-70">
-                       
-<BotaoGostei
-  forumId={forum.id}
-  inicialmenteGostei={curtidasState[forum.id]?.gostei ?? false}
-  inicialmenteQuantidade={curtidasState[forum.id]?.quantidade ?? 0}
-  onCurtirChange={(novoGostei, novaQuantidade) => {
-    setCurtidasState(prev => ({
-      ...prev,
-      [forum.id]: { gostei: novoGostei, quantidade: novaQuantidade }
-    }));
-  }}
-/>
+                        <BotaoGostei
+                          forumId={forum.id}
+                          inicialmenteGostei={
+                            curtidasState[forum.id]?.gostei ?? false
+                          }
+                          inicialmenteQuantidade={
+                            curtidasState[forum.id]?.quantidade ?? 0
+                          }
+                          onCurtirChange={(novoGostei, novaQuantidade) => {
+                            setCurtidasState((prev) => ({
+                              ...prev,
+                              [forum.id]: {
+                                gostei: novoGostei,
+                                quantidade: novaQuantidade,
+                              },
+                            }));
+                          }}
+                        />
                       </div>
                     </Button>
                   ))}
@@ -333,7 +416,7 @@ useEffect(() => {
             )}
           </div>
         </div>
- {/* Rodapé com campos de título e descrição para criar fórum */}
+        {/* Rodapé com campos de título e descrição para criar fórum */}
         <div className="flex items-center p-4 border-t border-pink2000 rounded-tr-2xl bg-pink2000 gap-2">
           <InputRoot className="flex-20 bg-pink3000 h-10 border border-pink2000 rounded-xl px-4 flex items-center gap-2 focus-within:border-pink4000">
             <InputField
@@ -363,98 +446,174 @@ useEffect(() => {
       />
 
       {/* Conteúdo principal */}
-<div
-  className="flex-1 overflow-hidden space-y-0"
-  style={{
-    marginLeft: sidebarWidth,
-    backgroundImage: "url('/CC2.png')",
-    backgroundSize: 'cover',
-    backgroundAttachment: 'fixed',
-    backgroundPosition: 'center'
-  }}
->
-  {selectedForum ? (
-    <>
-      {/* Faixa fixa no topo */}
-<div
-  className="fixed top-0 z-50 bg-pink3000 h-14 flex items-center px-6 border border-pink2000 rounded-b-sm"
-  style={{
-    // desloca a barra para não cobrir o sidebar
-    left: sidebarWidth,
-    width: `calc(100% - ${sidebarWidth}px)`,
-  }}
->
-  <h1 className="text-pink2000 text-2xl font-semibold ">
-    {selectedForum?.nome}
-  </h1>
+      <div
+        className="flex-1 overflow-hidden space-y-0"
+        style={{
+          marginLeft: sidebarWidth,
+          backgroundImage: "url('/CC2.png')",
+          backgroundSize: "cover",
+          backgroundAttachment: "fixed",
+          backgroundPosition: "center",
+        }}
+      >
+        {selectedForum ? (
+          <>
+            {/* Faixa fixa no topo */}
+            <div
+              className="fixed top-0 z-50 bg-pink3000 h-14 flex items-center px-6 border border-pink2000 rounded-b-sm"
+              style={{
+                // desloca a barra para não cobrir o sidebar
+                left: sidebarWidth,
+                width: `calc(100% - ${sidebarWidth}px)`,
+              }}
+            >
+              <h1 className="text-pink2000 text-2xl font-semibold ">
+                {selectedForum?.nome}
+              </h1>
+            </div>
 
-</div>
+            {/* Área do chat rolável */}
+            <div
+              className="chat-container overflow-y-auto p-4 pt-20" // <-- 64 px = altura da barra
+              style={{ height: "100vh" }}
+            >
+              {mensagensDoForum.length === 0 && (
+                <p className="text-center text-pink4000 mt-4">
+                  Nenhuma mensagem encontrada.
+                </p>
+              )}
 
-      {/* Área do chat rolável */}
-   <div
-  className="chat-container overflow-y-auto p-4 pt-20" // <-- 64 px = altura da barra
-  style={{ height: '100vh' }}
->
-        {mensagensDoForum.length === 0 && (
-          <p className="text-center text-pink4000 mt-4">Nenhuma mensagem encontrada.</p>
+              {mensagensDoForum
+                .slice()
+                .sort(
+                  (a, b) =>
+                    new Date(a.data_envio).getTime() -
+                    new Date(b.data_envio).getTime()
+                )
+                .map((msg) => {
+                  const isUser = msg.autor.nome === userName;
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`flex ${
+                        isUser ? "justify-end" : "justify-start"
+                      }`}
+                    >
+                      <div
+                        className={`max-w-[70%] px-4 py-2 rounded-2xl text-sm mb-2 ${
+                          isUser
+                            ? "bg-pink2000 text-pink1000 rounded-br-none"
+                            : "bg-pink3000 text-pink2000 rounded-bl-none"
+                        }`}
+                      >
+                        {!isUser && (
+                          <strong className="break-words font-semibold text-pink2000 mb-1">
+                            {msg.autor.nome}
+                          </strong>
+                        )}
+                        <p className="break-words">{msg.mensagem}</p>
+                        <span className="text-[10px] block text-right mt-1 text-pink4000">
+                          {new Date(msg.data_envio).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              <div ref={bottomRef} />
+            </div>
+
+            {/* Input de mensagem */}
+            <div className="p-4 border-t border-pink2000 max-w-xl mx-auto">
+              <ChatInput
+                forumId={selectedForum?.id ?? 0}
+                inicialmenteGostei={
+                  selectedForum
+                    ? curtidasState[selectedForum.id]?.gostei ?? false
+                    : false
+                }
+                inicialmenteQuantidade={
+                  selectedForum
+                    ? curtidasState[selectedForum.id]?.quantidade ?? 0
+                    : 0
+                }
+                onCurtirChange={(novoGostei, novaQuantidade) => {
+                  if (selectedForum) {
+                    setCurtidasState((prev) => ({
+                      ...prev,
+                      [selectedForum.id]: {
+                        gostei: novoGostei,
+                        quantidade: novaQuantidade,
+                      },
+                    }));
+                  }
+                }}
+                onNovaMensagem={(msg) => {
+                  // tratar nova mensagem
+                }}
+              />
+            </div>
+          </>
+        ) : (
+          <p className="text-center text-pink4000 mt-10">
+            Selecione um fórum para começar a conversar.
+          </p>
         )}
+      </div>
 
-        {mensagensDoForum
-          .slice()
-          .sort((a, b) => new Date(a.data_envio).getTime() - new Date(b.data_envio).getTime())
-          .map((msg) => {
-            const isUser = msg.autor.nome === userName;
-            return (
-              <div
-                key={msg.id}
-                className={`flex ${isUser ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`max-w-[70%] px-4 py-2 rounded-2xl text-sm mb-2 ${
-                    isUser
-                      ? "bg-pink2000 text-pink1000 rounded-br-none"
-                      : "bg-pink3000 text-pink2000 rounded-bl-none"
-                  }`}
+      {excluirModal && forumParaExcluir && (
+        <>
+          {/* backdrop */}
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => setExcluirModal(false)}
+            onKeyDown={(e) =>
+              (e.key === "Enter" || e.key === " ") && setExcluirModal(false)
+            }
+            className="fixed inset-0 z-40 backdrop-blur-sm"
+          />
+
+          {/* modal */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50">
+            <div className="bg-pink1000 rounded-2xl shadow-lg p-6 w-[90vw] max-w-sm h-[200px] border border-pink4000">
+              {/* botão voltar */}
+              <div className="absolute top-4 left-1">
+                <IconButton
+                  onClick={() => setExcluirModal(false)}
+                  className="p-1.5 bg-pink1000 text-pink4000 rounded-md cursor-pointer transition-colors duration-300 hover:text-pink2000"
                 >
-                  <p className="break-words">{msg.mensagem}</p>
-                  <span className="text-[10px] block text-right mt-1 text-pink4000">
-                    {new Date(msg.data_envio).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                </div>
+                  <ArrowLeft />
+                </IconButton>
               </div>
-            );
-          })}
-        <div ref={bottomRef} />
-      </div>
 
-      {/* Input de mensagem */}
-      <div className="p-4 border-t border-pink2000 max-w-xl mx-auto">
- <ChatInput
-        forumId={selectedForum?.id ?? 0}
-        inicialmenteGostei={selectedForum ? curtidasState[selectedForum.id]?.gostei ?? false : false}
-        inicialmenteQuantidade={selectedForum ? curtidasState[selectedForum.id]?.quantidade ?? 0 : 0}
-        onCurtirChange={(novoGostei, novaQuantidade) => {
-          if (selectedForum) {
-            setCurtidasState(prev => ({
-              ...prev,
-              [selectedForum.id]: { gostei: novoGostei, quantidade: novaQuantidade }
-            }));
-          }
-        }}
-        onNovaMensagem={(msg) => {
-          // tratar nova mensagem
-        }}
-      />
-      </div>
-    </>
-  ) : (
-    <p className="text-center text-pink4000 mt-10">Selecione um fórum para começar a conversar.</p>
-  )}
-</div>
- 
+              {/* faixa superior */}
+              <div className="bg-pink2000 w-full h-4 absolute top-0 left-0 rounded-t-2xl border border-pink4000" />
+
+              {/* título */}
+              <h2 className="text-xl font-bold mb-5 text-pink4000 text-center">
+                Excluir Fórum
+              </h2>
+
+              {/* mensagem */}
+              <p className="text-pink4000 text-sm mb-8 text-center">
+                Tem certeza que deseja excluir&nbsp;
+                <strong>{forumParaExcluir.nome}</strong>?
+              </p>
+
+              {/* botão confirmar */}
+              <Button
+                onClick={() => excluirForum(forumParaExcluir.id)}
+                className="bg-red text-pink1000 border border-red px-4 py-2 rounded-xl w-full transition-colors duration-300 hover:bg-pink3000 hover:text-red cursor-pointer"
+              >
+                Excluir fórum
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }
