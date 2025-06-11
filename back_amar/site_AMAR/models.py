@@ -38,6 +38,7 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
+    foto_perfil = models.ImageField(upload_to='fotos_perfil/', blank=True, null=True)  # novo campo
    
     
     USERNAME_FIELD = 'email'
@@ -210,16 +211,29 @@ class Agendamento(models.Model):
             
             
 class Forums(models.Model):
-    imag_png = models.ImageField(upload_to='imagens/')
-    nome = models.CharField(max_length=100, blank=True)
-    publicacao = models.CharField(max_length=150, blank=True) 
-    like = models.IntegerField(default=0)  #REANALIZAR ACHO QUE ESTÁ INCORRETO!
+    criador = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='foruns_criados')
+    nome = models.CharField(max_length=100, blank=True, null=False)
+    publicacao = models.CharField(max_length=150, blank=True, null=False)
+
     def __str__(self):
         return self.nome
-    
+
+    @property
+    def total_curtidas(self):
+        return self.curtidas.count()  # usa related_name da ForumCurtida
+
+
 class MensagemForum(models.Model):
-    forum = models.ForeignKey(Forums, on_delete=models.CASCADE, related_name='mensagens')
-    autor = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    forum = models.ForeignKey(Forums, on_delete=models.CASCADE, null=False, related_name='mensagens')
+    autor = models.ForeignKey(Usuario, on_delete=models.CASCADE, null=False)
     mensagem = models.TextField()
-    data_envio = models.DateTimeField(auto_now_add=True)#TALVEZ SUBSTITUIR PARA HORA DE ENVIO(VER COMPORTAMENTO)
-    
+    data_envio = models.DateTimeField(auto_now_add=True)
+
+
+class ForumCurtida(models.Model):
+    forum = models.ForeignKey(Forums, on_delete=models.CASCADE, null=False, related_name='curtidas')
+    usuario = models.ForeignKey(Usuario, null=False, on_delete=models.CASCADE)
+    data = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('forum', 'usuario')  # impede curtidas duplicadas

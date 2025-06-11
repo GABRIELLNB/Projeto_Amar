@@ -16,7 +16,7 @@ export function BuscaPorNome({
   className,
 }: BuscaPorNomeProps) {
   return (
-    <div className="w-full max-w-xs">
+    <div className="w-full">
       <InputRoot
         className={cn(
           'relative bg-pink1000 h-10 border border-pink2000 rounded-sm px-4 flex items-center gap-2 focus-within:border-pink4000',

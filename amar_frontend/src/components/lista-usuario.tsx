@@ -153,11 +153,11 @@ function renderSection(
 
       {isOpen && (
         <>
-        <div className="mt-2 mb-2 flex items-center justify-between gap-2">
+        <div className="mt-2 mb-2 flex items-center justify-between gap-18">
           
           {sectionKey !== "usuarios" && (
             <Button
-              className="bg-pink2000 shadow text-pink1000 px-4 py-2 rounded-md hover:bg-pink1000 hover:text-pink2000 cursor-pointer transition-colors duration-300"
+              className="bg-pink2000 w-170 shadow text-pink1000 px-4 py-2 rounded-md hover:bg-pink1000 hover:text-pink2000 cursor-pointer transition-colors duration-300"
               onClick={() => handleAdicionarClick(sectionKey)}
             >
               {buttonText}
@@ -166,8 +166,9 @@ function renderSection(
           <BuscaPorNome
             valor={termoBusca}
             aoAlterar={setTermoBusca}
-            placeholder={`Busca por nome, email ou CPFem ${title.toLowerCase()}`}
-            className="flex-grow"
+            placeholder={`Busca por nome, email ou CPF ${title.toLowerCase()}`}
+            className="flex-grow max-w-xs
+            "
           />
 
         </div>

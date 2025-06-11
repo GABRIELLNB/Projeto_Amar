@@ -6,10 +6,10 @@ import { Button } from './button'
 import { BotaoGostei } from './gostei'
 
 
-function useClickOutside(ref: React.RefObject<HTMLElement>, handler: () => void) {
+function useClickOutside<T extends HTMLElement | null>(ref: React.RefObject<T>, handler: () => void) {
   useEffect(() => {
     function onClick(event: MouseEvent) {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
+      if (ref.current && ref.current instanceof HTMLElement && !ref.current.contains(event.target as Node)) {
         handler()
       }
     }
@@ -20,22 +20,47 @@ function useClickOutside(ref: React.RefObject<HTMLElement>, handler: () => void)
   }, [ref, handler])
 }
 
-export function ChatInput() {
+export function ChatInput({ forumId, onNovaMensagem }: { forumId: number, onNovaMensagem: (msg: MessageType) => void }) {
   const [mensagem, setMensagem] = useState('')
   const [mostrarEmoji, setMostrarEmoji] = useState(false)
   const emojiRef = useRef<HTMLDivElement>(null)
 
   useClickOutside(emojiRef, () => setMostrarEmoji(false))
 
-  const enviarMensagem = () => {
-    if (mensagem.trim() === '') return
-    console.log('Mensagem enviada:', mensagem)
-    setMensagem('')
+ const enviarMensagem = async () => {
+    if (mensagem.trim() === '') return;
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/mensagem-forum/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify({
+          forum: forumId,
+          mensagem: mensagem,
+        }),
+      });
+
+      if (!response.ok) {
+        const erro = await response.json();
+        throw new Error(erro.detail || 'Erro ao enviar mensagem');
+      }
+
+      const data = await response.json();
+      setMensagem('');
+      onNovaMensagem(data);  // Atualiza a lista de mensagens no pai
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error);
+    }
   }
 
-  const adicionarEmoji = (emojiData: EmojiClickData) => {
-    setMensagem(prev => prev + emojiData.emoji)
-  }
+
+function adicionarEmoji(emojiData: EmojiClickData, event: MouseEvent) {
+  setMensagem(prev => prev + emojiData.emoji)
+  // Não fecha mais o seletor de emoji automaticamente
+}
 
   return (
     <div className="border-t px-4 py-3 flex items-center gap-2 border border-pink1000 bg-pink1000 fixed bottom-0 left-[350px] right-0 z-50">

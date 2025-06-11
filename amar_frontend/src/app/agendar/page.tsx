@@ -158,7 +158,7 @@ export default function Agendar() {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isResizing = useRef(false);
   const minWidth = 300;
-  const maxWidth = 450;
+  const maxWidth = 400;
   const [sidebarWidth, setSidebarWidth] = useState(350);
 
   const startResizing = () => {

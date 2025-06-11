@@ -1,6 +1,6 @@
 from django.apps import apps
 from rest_framework import serializers
-from .models import Agendamento, Estagiario, Profissional, Usuario, Forums, MensagemForum
+from .models import Agendamento, Estagiario, ForumCurtida, Profissional, Usuario, Forums, MensagemForum
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -42,7 +42,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Usuario
-        fields = ['email', 'nome', 'cpf', 'telefone', 'senha']
+        fields = ['email', 'nome', 'cpf', 'telefone', 'senha', 'foto_perfil']
 
     def create(self, validated_data):
         senha = validated_data.pop('senha')
@@ -169,19 +169,34 @@ class LoginSerializer(serializers.Serializer):
     senha = serializers.CharField(write_only=True)
 '''
 
-class ForumSerializer(serializers.ModelSerializer):
-    link = serializers.SerializerMethodField()
 
-    class Metal:
+class ForumsSerializer(serializers.ModelSerializer):
+    criador = UsuarioSerializer(read_only=True)
+    total_curtidas = serializers.ReadOnlyField()
+    foto_perfil_criador = serializers.ImageField(source='criador.foto_perfil', read_only=True)
+    curtiu = serializers.SerializerMethodField()  # novo campo
+     
+    class Meta:
         model = Forums
-        fields = ['id', 'nome', 'publicacao', 'like','link']
+        fields = ['id', 'criador', 'nome', 'foto_perfil_criador', 'publicacao', 'total_curtidas', 'curtiu']
+        
+    def get_curtiu(self, obj):
+        request = self.context.get('request', None)
+        if not request or request.user.is_anonymous:
+            return False
+        user = request.user
+        return ForumCurtida.objects.filter(forum=obj, usuario=user).exists()
 
-    def get_link(self, obj):
-        return f"/forum{obj.id}/" #Url do front
 
 class MensagemForumSerializer(serializers.ModelSerializer):
-    autor_nome = serializers.CharField(source='autor.nome', read_only=True)
+    autor = UsuarioSerializer(read_only=True)
     
     class Meta:
         model = MensagemForum
-        fields = ['id', 'autor_nome', 'mensagem', 'data_envio']
+        fields = ['id', 'forum', 'autor', 'mensagem', 'data_envio']
+
+class ForumCurtidaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ForumCurtida
+        fields = ['id', 'forum', 'usuario', 'data']
+        read_only_fields = ['data']

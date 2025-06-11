@@ -9,7 +9,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from datetime import datetime
-from .models import Agendamento
+from .models import Agendamento, ForumCurtida
 #from .utils import get_tipo_usuario #PARA O MENU
 from .models import (
     Agendamento,
@@ -23,10 +23,10 @@ from .models import (
 from .serializers import (
     AgendamentoSerializer,
     DisponibilidadeSerializer,
+    ForumsSerializer,
     UsuarioSerializer,
     ProfissionalSerializer,
     EstagiarioSerializer,
-    ForumSerializer,
     MensagemForumSerializer
 )
 
@@ -554,6 +554,7 @@ class DisponibilidadesPorhorariosView(APIView):
 
         return Response(resultado)
 
+"""
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.contenttypes.models import ContentType
@@ -589,7 +590,7 @@ class DatasDisponiveisView(APIView):
         datas_unicas = disponibilidades.values_list('dia', flat=True).distinct().order_by('dia')
 
         return Response(list(datas_unicas))
-
+"""
 
 ''' #Não sei se via usar isso porque separei as viwes para organizar
 class ForumDetailView(APIView):
@@ -602,15 +603,152 @@ class ForumDetailView(APIView):
         serializer = ForumSerializer(forum)
         return Response(serializer.data)
 '''
-class ForumListView(APIView):
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status, permissions
+from django.shortcuts import get_object_or_404
+
+class ForumsAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
     def get(self, request):
-        foruns = Forums.objects.all().order_by('-id')
-        serializer = ForumSerializer(foruns, many=True)
-        return Response(serializer.data,status=status.HTTP_200_OK)
+        forums = Forums.objects.all()
+        serializer = ForumsSerializer(forums, many=True, context={'request': request})
+        return Response(serializer.data)
 
-
-
+    def post(self, request):
+        serializer = ForumsSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(criador=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+    def put(self, request, pk):
+        try:
+            forum = Forums.objects.get(pk=pk)
+        except Forums.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ForumsSerializer(forum, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try:
+            forum = Forums.objects.get(pk=pk)
+        except Forums.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        forum.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class ForumDetailAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self, pk):
+        return get_object_or_404(Forums, pk=pk)
+
+    def get(self, request, pk):
+        forum = self.get_object(pk)
+        serializer = ForumsSerializer(forum)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        forum = self.get_object(pk)
+        serializer = ForumsSerializer(forum, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        forum = self.get_object(pk)
+        forum.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class CurtirForumAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        forum = get_object_or_404(Forums, pk=pk)
+        usuario = request.user
+
+        if ForumCurtida.objects.filter(forum=forum, usuario=usuario).exists():
+            return Response({'detail': 'Você já curtiu este fórum.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        ForumCurtida.objects.create(forum=forum, usuario=usuario)
+        return Response({'detail': 'Curtida registrada com sucesso.'}, status=status.HTTP_201_CREATED)
+
+
+class DescurtirForumAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        forum = get_object_or_404(Forums, pk=pk)
+        usuario = request.user
+        
+        curtida = ForumCurtida.objects.filter(forum=forum, usuario=usuario).first()
+        if not curtida:
+            return Response({'detail': 'Você não curtiu este fórum.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        curtida.delete()
+        return Response({'detail': 'Curtida removida com sucesso.'}, status=status.HTTP_200_OK)
+
+
+class MensagemForumAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        forum_id = request.query_params.get('forum')
+        if forum_id:
+            mensagens = MensagemForum.objects.filter(forum_id=forum_id).order_by("data_envio")
+        else:
+            mensagens = MensagemForum.objects.all().order_by("data_envio")
+        serializer = MensagemForumSerializer(mensagens, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = MensagemForumSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(autor=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class MensagemForumDetailAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self, pk):
+        return get_object_or_404(MensagemForum, pk=pk)
+
+    def get(self, request, pk):
+        mensagem = self.get_object(pk)
+        serializer = MensagemForumSerializer(mensagem)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        mensagem = self.get_object(pk)
+        serializer = MensagemForumSerializer(mensagem, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        mensagem = self.get_object(pk)
+        mensagem.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+
+class MensagemForumListAPIView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = MensagemForumSerializer
+
+    def get_queryset(self):
+        forum_id = self.kwargs['forum_id']
+        return MensagemForum.objects.filter(forum=forum_id).order_by('data_envio')
 '''
 class MenuView(APIView):
     permission_classes = [IsAuthenticated]

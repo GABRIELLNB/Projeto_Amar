@@ -12,7 +12,7 @@ import {
   Send,
   Settings,
   User,
-  UserRoundPen
+  UserRoundPen,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useRef, useState, useEffect, useCallback } from "react";
@@ -23,14 +23,20 @@ interface SidebarMenuProps {
   userType: "profissional" | "estagiario" | "outro";
 }
 
-export default function SidebarMenu({ userName, activeItem: propActiveItem, userType }: SidebarMenuProps) {
-  const [activeSidebarItem, setActiveSidebarItem] = useState<string>(propActiveItem || "Menu");
+export default function SidebarMenu({
+  userName,
+  activeItem: propActiveItem,
+  userType,
+}: SidebarMenuProps) {
+  const [activeSidebarItem, setActiveSidebarItem] = useState<string>(
+    propActiveItem || "Menu"
+  );
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isResizing = useRef(false);
   const router = useRouter();
 
   const minWidth = 300;
-  const maxWidth = 450;
+  const maxWidth = 400;
 
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     if (typeof window !== "undefined") {
@@ -81,15 +87,62 @@ export default function SidebarMenu({ userName, activeItem: propActiveItem, user
     { icon: <MessageSquare />, label: "Bate-Papo", path: "/forum" },
     { icon: <CalendarPlus />, label: "Agendar", path: "/agendar" },
     { icon: <FileClock />, label: "Histórico", path: "/historico" },
-    { icon: <Settings />, label: "Configurações", path: "/configuracoes" }
+    { icon: <Settings />, label: "Configurações", path: "/configuracoes" },
   ];
 
   const extraItems =
     userType === "profissional" || userType === "estagiario"
-      ? [{ icon: <CalendarCheck2 />, label: "Consultas Marcadas", path: "/consultas" }]
+      ? [
+          {
+            icon: <CalendarCheck2 />,
+            label: "Consultas Marcadas",
+            path: "/consultas",
+          },
+        ]
       : [];
 
   const menuItems = [...baseMenuItems, ...extraItems];
+  const [novoTitulo, setNovoTitulo] = useState("");
+  const [novaDescricao, setNovaDescricao] = useState("");
+  const [foruns, setForuns] = useState([]);
+  const token = localStorage.getItem("token");
+
+  const formatarDataSimples = (date: Date) => {
+    const dia = String(date.getDate()).padStart(2, "0");
+    const mes = String(date.getMonth() + 1).padStart(2, "0"); // mês começa em 0
+    const ano = date.getFullYear();
+    return `${dia}-${mes}-${ano}`;
+  };
+
+  const criarForum = async () => {
+    try {
+      const dataCriacao = formatarDataSimples(new Date());
+
+      const response = await fetch("http://localhost:8000/api/forum/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // se estiver usando JWT
+        },
+        body: JSON.stringify({
+          nome: novoTitulo,
+          publicacao: dataCriacao,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Fórum criado com sucesso:", data);
+        setForuns((prev) => [...prev, data]);
+        setNovoTitulo("");
+      } else {
+        const erro = await response.json();
+        console.error("Erro ao criar fórum:", erro);
+      }
+    } catch (error) {
+      console.error("Erro ao conectar com o servidor:", error);
+    }
+  };
 
   return (
     <>
@@ -115,7 +168,7 @@ export default function SidebarMenu({ userName, activeItem: propActiveItem, user
 
           {menuItems.map((item, index) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-<div key={index} className="flex justify-center mb-2">
+            <div key={index} className="flex justify-center mb-2">
               <Button
                 className={`flex justify-between items-center px-5 h-12 font-semibold rounded-xl w-full cursor-pointer transition-colors duration-300 ${
                   activeSidebarItem === item.label
@@ -124,7 +177,13 @@ export default function SidebarMenu({ userName, activeItem: propActiveItem, user
                 }`}
                 onClick={() => handleMenuClick(item.label, item.path)}
               >
-                <ButtonIcon className={activeSidebarItem === item.label ? "text-pink1000" : "text-pink4000"}>
+                <ButtonIcon
+                  className={
+                    activeSidebarItem === item.label
+                      ? "text-pink1000"
+                      : "text-pink4000"
+                  }
+                >
                   {item.icon}
                 </ButtonIcon>
                 <ButtonField className="flex-1">{item.label}</ButtonField>
@@ -133,12 +192,21 @@ export default function SidebarMenu({ userName, activeItem: propActiveItem, user
           ))}
         </div>
 
-        {/* Rodapé com campo de mensagem */}
-        <div className="flex items-center p-4 border-t border-pink2000 rounded-tr-2xl bg-pink2000">
+       
+        {/* Rodapé com campos de título e descrição para criar fórum */}
+        <div className="flex items-center p-4 border-t border-pink2000 rounded-tr-2xl bg-pink2000 gap-2">
           <InputRoot className="flex-20 bg-pink3000 h-10 border border-pink2000 rounded-xl px-4 flex items-center gap-2 focus-within:border-pink4000">
-            <InputField placeholder="Digite sua mensagem..." />
+            <InputField
+              placeholder="Nome do fórum"
+              value={novoTitulo}
+              onChange={(e) => setNovoTitulo(e.target.value)}
+            />
           </InputRoot>
-          <Button className="ml-4 bg-pink4000 text-pink1000 p-2 rounded-2xl hover:bg-pink1000 transition-colors duration-300 hover:text-pink4000">
+
+          <Button
+            onClick={criarForum}
+            className="ml-2 bg-pink4000 text-pink1000 p-2 rounded-2xl hover:bg-pink1000 transition-colors duration-300 hover:text-pink4000"
+          >
             <Send className="w-5 h-5 cursor-pointer" />
           </Button>
         </div>
