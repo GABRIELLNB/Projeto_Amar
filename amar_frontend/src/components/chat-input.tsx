@@ -20,14 +20,26 @@ function useClickOutside<T extends HTMLElement | null>(ref: React.RefObject<T>, 
   }, [ref, handler])
 }
 
-export function ChatInput({ forumId, onNovaMensagem }: { forumId: number, onNovaMensagem: (msg: MessageType) => void }) {
-  const [mensagem, setMensagem] = useState('')
-  const [mostrarEmoji, setMostrarEmoji] = useState(false)
-  const emojiRef = useRef<HTMLDivElement>(null)
+export function ChatInput({
+  forumId,
+  inicialmenteGostei = false,
+  inicialmenteQuantidade = 0,
+  onCurtirChange,
+  onNovaMensagem,
+}: {
+  forumId: number;
+  inicialmenteGostei: boolean;
+  inicialmenteQuantidade: number;
+  onCurtirChange: (gostei: boolean, quantidade: number) => void;
+  onNovaMensagem: (msg: MessageType) => void;
+}) {
+  const [mensagem, setMensagem] = useState('');
+  const [mostrarEmoji, setMostrarEmoji] = useState(false);
+  const emojiRef = useRef<HTMLDivElement>(null);
 
-  useClickOutside(emojiRef, () => setMostrarEmoji(false))
+  useClickOutside(emojiRef, () => setMostrarEmoji(false));
 
- const enviarMensagem = async () => {
+  const enviarMensagem = async () => {
     if (mensagem.trim() === '') return;
     const token = localStorage.getItem("token");
     try {
@@ -50,30 +62,34 @@ export function ChatInput({ forumId, onNovaMensagem }: { forumId: number, onNova
 
       const data = await response.json();
       setMensagem('');
-      onNovaMensagem(data);  // Atualiza a lista de mensagens no pai
+      onNovaMensagem(data);
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
     }
+  };
+
+  function adicionarEmoji(emojiData: EmojiClickData, event: MouseEvent) {
+    setMensagem(prev => prev + emojiData.emoji);
   }
-
-
-function adicionarEmoji(emojiData: EmojiClickData, event: MouseEvent) {
-  setMensagem(prev => prev + emojiData.emoji)
-  // Não fecha mais o seletor de emoji automaticamente
-}
 
   return (
     <div className="border-t px-4 py-3 flex items-center gap-2 border border-pink1000 bg-pink1000 fixed bottom-0 left-[350px] right-0 z-50">
-     <BotaoGostei/>
+<BotaoGostei
+        forumId={forumId}
+        inicialmenteGostei={inicialmenteGostei}
+        inicialmenteQuantidade={inicialmenteQuantidade}
+        onCurtirChange={onCurtirChange}
+      />
 
       <div className="relative w-full">
         <InputRoot className="group bg-pink3000 h-12 border border-pink2000 w-full rounded-xl px-4 flex items-center gap-2 focus-within:border-pink4000 data-[error=true]:border-red-700">
-          <InputIcon className="text-pink2000 group-focus-within:text-pink4000  group-[&:not(:has(input:placeholder-shown))]:text-pink4000 group-data[error=true]:text-red-700 ">
+          <InputIcon className="text-pink2000 group-focus-within:text-pink4000">
             <Button
               type="button"
               onClick={() => setMostrarEmoji(!mostrarEmoji)}
               className={`flex items-center justify-center p-1 focus:outline-none cursor-pointer transition-colors ${
-    mostrarEmoji ? 'text-pink4000' : 'text-pink2000 hover:text-pink4000'  }`}
+                mostrarEmoji ? 'text-pink4000' : 'text-pink2000 hover:text-pink4000'
+              }`}
             >
               <Smile size={24} />
             </Button>
@@ -89,10 +105,7 @@ function adicionarEmoji(emojiData: EmojiClickData, event: MouseEvent) {
         </InputRoot>
 
         {mostrarEmoji && (
-          <div
-            ref={emojiRef}
-            className="absolute bottom-14 left-0 z-50 justify-center"
-          >
+          <div ref={emojiRef} className="absolute bottom-14 left-0 z-50 justify-center">
             <EmojiPicker
               onEmojiClick={adicionarEmoji}
               lazyLoadEmojis
@@ -110,5 +123,5 @@ function adicionarEmoji(emojiData: EmojiClickData, event: MouseEvent) {
         <Send size={20} />
       </Button>
     </div>
-  )
+  );
 }

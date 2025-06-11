@@ -23,6 +23,7 @@ type ForumsDisponiveis = {
   nome: string;
   publicacao: string;
   total_curtidas: number;
+  curtiu: boolean; // indica se o usuário atual curtiu o fórum
 };
 
 type Mensagem = {
@@ -41,9 +42,11 @@ type Mensagem = {
 };
 
 type ForumProps = {
-  selectedForumId: number;
+  forumId: number;
+  inicialmenteGostei: boolean;
+  inicialmenteQuantidade: number;
 };
-export default function Forum({ selectedForumId }: ForumProps) {
+export default function Forum({ forumId,  inicialmenteGostei, inicialmenteQuantidade }: ForumProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [sidebarWidth, setSidebarWidth] = useState(350);
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -184,8 +187,17 @@ useEffect(() => {
       console.error("Erro ao conectar com o servidor:", error);
     }
   };
+const [curtidasState, setCurtidasState] = useState<{ [forumId: number]: { gostei: boolean; quantidade: number } }>({});
 
-
+useEffect(() => {
+  if (foruns.length > 0) {
+    const estadoInicial: { [forumId: number]: { gostei: boolean; quantidade: number } } = {};
+    for (const forum of foruns) {
+      estadoInicial[forum.id] = { gostei: forum.curtiu, quantidade: forum.total_curtidas };
+    }
+    setCurtidasState(estadoInicial);
+  }
+}, [foruns]);
   const userName = localStorage.getItem("user_name") || "";
   return (
     <>
@@ -259,8 +271,18 @@ useEffect(() => {
                       </span>
 
                       <div className="absolute bottom-0 right-1 scale-70">
-                        <span>{forum.total_curtidas}</span>
-                        {selectedForum?.id && <BotaoGostei forumId={selectedForum.id} />}
+                   
+<BotaoGostei
+  forumId={forum.id}
+  inicialmenteGostei={curtidasState[forum.id]?.gostei ?? false}
+  inicialmenteQuantidade={curtidasState[forum.id]?.quantidade ?? 0}
+  onCurtirChange={(novoGostei, novaQuantidade) => {
+    setCurtidasState(prev => ({
+      ...prev,
+      [forum.id]: { gostei: novoGostei, quantidade: novaQuantidade }
+    }));
+  }}
+/>
                       </div>
                     </Button>
                   ))}
@@ -292,8 +314,18 @@ useEffect(() => {
                         <CircleX size={15} />
                       </IconButton>
                       <div className="absolute bottom-0 right-1 scale-70">
-                        <span>{forum.total_curtidas}</span>
-                        {selectedForum?.id && <BotaoGostei forumId={selectedForum.id} />}
+                       
+<BotaoGostei
+  forumId={forum.id}
+  inicialmenteGostei={curtidasState[forum.id]?.gostei ?? false}
+  inicialmenteQuantidade={curtidasState[forum.id]?.quantidade ?? 0}
+  onCurtirChange={(novoGostei, novaQuantidade) => {
+    setCurtidasState(prev => ({
+      ...prev,
+      [forum.id]: { gostei: novoGostei, quantidade: novaQuantidade }
+    }));
+  }}
+/>
                       </div>
                     </Button>
                   ))}
@@ -400,7 +432,22 @@ useEffect(() => {
 
       {/* Input de mensagem */}
       <div className="p-4 border-t border-pink2000 max-w-xl mx-auto">
-         <ChatInput forumId={selectedForum?.id} onNovaMensagem={msg => setMensagens(prev => [...prev, msg])} />
+ <ChatInput
+        forumId={selectedForum?.id ?? 0}
+        inicialmenteGostei={selectedForum ? curtidasState[selectedForum.id]?.gostei ?? false : false}
+        inicialmenteQuantidade={selectedForum ? curtidasState[selectedForum.id]?.quantidade ?? 0 : 0}
+        onCurtirChange={(novoGostei, novaQuantidade) => {
+          if (selectedForum) {
+            setCurtidasState(prev => ({
+              ...prev,
+              [selectedForum.id]: { gostei: novoGostei, quantidade: novaQuantidade }
+            }));
+          }
+        }}
+        onNovaMensagem={(msg) => {
+          // tratar nova mensagem
+        }}
+      />
       </div>
     </>
   ) : (

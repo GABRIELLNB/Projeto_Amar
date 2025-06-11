@@ -679,7 +679,12 @@ class CurtirForumAPIView(APIView):
             return Response({'detail': 'Você já curtiu este fórum.'}, status=status.HTTP_400_BAD_REQUEST)
 
         ForumCurtida.objects.create(forum=forum, usuario=usuario)
-        return Response({'detail': 'Curtida registrada com sucesso.'}, status=status.HTTP_201_CREATED)
+
+        return Response({
+            'detail': 'Curtida registrada com sucesso.',
+            'total_curtidas': forum.total_curtidas,
+            'curtiu': True
+        }, status=status.HTTP_201_CREATED)
 
 
 class DescurtirForumAPIView(APIView):
@@ -688,15 +693,19 @@ class DescurtirForumAPIView(APIView):
     def post(self, request, pk):
         forum = get_object_or_404(Forums, pk=pk)
         usuario = request.user
-        
+
         curtida = ForumCurtida.objects.filter(forum=forum, usuario=usuario).first()
         if not curtida:
             return Response({'detail': 'Você não curtiu este fórum.'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         curtida.delete()
-        return Response({'detail': 'Curtida removida com sucesso.'}, status=status.HTTP_200_OK)
 
-
+        return Response({
+            'detail': 'Curtida removida com sucesso.',
+            'total_curtidas': forum.total_curtidas,
+            'curtiu': False
+        }, status=status.HTTP_200_OK)
+        
 class MensagemForumAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
