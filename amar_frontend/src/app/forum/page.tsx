@@ -241,6 +241,8 @@ export default function Forum({
     }
   }
 
+
+
   const [buscaForuns, setBuscaForuns] = useState("");
   function filtrarForuns(foruns: Forum[], termoBusca: string) {
   if (!termoBusca) return foruns;
@@ -551,7 +553,7 @@ export default function Forum({
                   }
                 }}
                 onNovaMensagem={(msg) => {
-                  // tratar nova mensagem
+                  setMensagens((prev) => [...prev, msg]);
                 }}
               />
             </div>

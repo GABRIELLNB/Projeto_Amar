@@ -1,56 +1,88 @@
 import React, { useState, useEffect } from 'react'
-import { Heart, ThumbsUp } from 'lucide-react'
+import { Heart } from 'lucide-react'
 import { Button } from './button'
 
-export function BotaoGostei() {
-  const [gostei, setGostei] = useState(false)
-  const [animando, setAnimando] = useState(false)
 
+export function BotaoGostei({
+  forumId,
+  inicialmenteGostei = false,
+  inicialmenteQuantidade = 0,
+  onCurtirChange, // callback opcional
+}: {
+  forumId: number;
+  inicialmenteGostei?: boolean;
+  inicialmenteQuantidade?: number;
+  onCurtirChange?: (novoGostei: boolean, novaQuantidade: number) => void;
+}) {
+  const [gostei, setGostei] = useState(inicialmenteGostei);
+  const [quantidade, setQuantidade] = useState(inicialmenteQuantidade);
+  const [loading, setLoading] = useState(false);
+  const [animando, setAnimando] = useState(false);
+  const token = localStorage.getItem("token");
+
+  // caso o mesmo componente seja reciclado para outro fórum
   useEffect(() => {
-    if (animando) {
-      const timer = setTimeout(() => setAnimando(false), 700)
-      return () => clearTimeout(timer)
-    }
-  }, [animando])
+    setGostei(inicialmenteGostei);
+    setQuantidade(inicialmenteQuantidade);
+  }, [inicialmenteGostei, inicialmenteQuantidade]);
 
-  const handleClick = () => {
-    if (!gostei) {
-      setGostei(true)
-      setAnimando(true)
-    } else {
-      setGostei(false)
+  const handleClick = async () => {
+    if (loading) return;
+    setLoading(true);
+
+    const proximoEstado = !gostei;
+    const url = `http://localhost:8000/api/forum/${forumId}/${proximoEstado ? "curtir" : "descurtir"}/`;
+
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!res.ok) {
+        alert("Erro ao curtir/descurtir");
+        return;
+      }
+
+      const novaQuantidade = proximoEstado ? quantidade + 1 : Math.max(0, quantidade - 1);
+      setGostei(proximoEstado);
+      setQuantidade(novaQuantidade);
+
+      onCurtirChange?.(proximoEstado, novaQuantidade); // AVISA O PAI
+
+      if (proximoEstado) {
+        setAnimando(true);
+        setTimeout(() => setAnimando(false), 700);
+      }
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <>
       <Button
         onClick={handleClick}
-        aria-label={gostei ? 'Desfazer gostei' : 'Gostei'}
-        className={'relative text-pink2000 cursor-pointer bg-transparent border-none outline-none p-0'}
+        aria-label={gostei ? "Desfazer gostei" : "Gostei"}
+        disabled={loading}
+        className="relative flex items-center gap-1 bg-transparent p-0"
       >
         <Heart
-          size={30}
-          fill={gostei ? 'currentColor' : 'none'}
+          size={28}
+          fill={gostei ? "currentColor" : "none"}
           stroke="currentColor"
-          strokeWidth={2}
-          className={`transition-colors duration-300 ${
-            gostei ? 'text-red' : 'text-pink2000'
-          }`}
+          className={` cursor-pointer transition-colors duration-300 ${gostei ? "text-red-500" : "text-pink2000"}`}
         />
+        <span>{quantidade}</span>
 
-        {/* Círculos animados */}
         {animando && (
           <>
-            <span className="burst burst-1">
-
-            </span>
-            <span className="burst burst-2">
-
-            </span>
-            <span className="burst burst-3">
-                
-            </span>
+            <span className="burst burst-1" />
+            <span className="burst burst-2" />
+            <span className="burst burst-3" />
           </>
         )}
       </Button>
@@ -65,7 +97,7 @@ export function BotaoGostei() {
         .burst {
           position: absolute;
           border-radius: 50%;
-          background-color: #db2777; /* pink-600 */
+          background-color: #db2777;
           opacity: 0.7;
           pointer-events: none;
           animation: burstAnim 500ms ease forwards;
