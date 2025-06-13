@@ -41,11 +41,13 @@ type Mensagem = {
 };
 
 type Props = {
-  params: { forumId: string };
+  params: {
+    forumId: string;
+  };
 };
 
-export default async function Forum({ params }: Props) {
-  const forumId = params.forumId;
+export default function Forum({ params }: Props) {
+  const { forumId } = params;
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [sidebarWidth, setSidebarWidth] = useState(350);
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -239,7 +241,7 @@ export default async function Forum({ params }: Props) {
 
 
   const [buscaForuns, setBuscaForuns] = useState("");
-  function filtrarForuns(foruns: ForumsDisponiveis[], termoBusca: string) {
+  function filtrarForuns(foruns: Forum[], termoBusca: string) {
   if (!termoBusca) return foruns;
 
   const lowerTerm = termoBusca.toLowerCase();
