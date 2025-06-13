@@ -42,7 +42,7 @@ type Mensagem = {
 
 export default function Forum() {
   const params = useParams();
-  
+  const forumId = params.forumId ? Number(params.forumId) : null
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [sidebarWidth, setSidebarWidth] = useState(350);
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -386,7 +386,7 @@ export default function Forum() {
                         <CircleX size={15} />
                       </IconButton>
                       <div className="absolute bottom-0 right-1 scale-70">
-                        <BotaoGostei
+                        {forumId &&<BotaoGostei
                           forumId={forum.id}
                           inicialmenteGostei={
                             curtidasState[forum.id]?.gostei ?? false
@@ -403,7 +403,7 @@ export default function Forum() {
                               },
                             }));
                           }}
-                        />
+                        />}
                       </div>
                     </Button>
                   ))}
