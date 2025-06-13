@@ -2,7 +2,7 @@ import type React from 'react';
 import { forwardRef } from 'react';
 import { IMaskInput, type IMaskInputProps } from 'react-imask';
 
-import type { Mask } from 'imask';
+import type { Mask } from 'imaskjs';
 
 interface MaskedInputFieldProps extends Omit<IMaskInputProps<any>, 'onAccept'> {
   mask: Mask<any>;
