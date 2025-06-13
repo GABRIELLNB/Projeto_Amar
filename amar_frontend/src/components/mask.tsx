@@ -1,18 +1,18 @@
 import type React from 'react';
 import { forwardRef } from 'react';
-import { IMaskInput } from 'react-imask';
+import { IMaskInput, type IMaskInputProps } from 'react-imask';
 
-interface MaskedInputFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  mask: string;
+import type { Mask } from 'imask';
+
+interface MaskedInputFieldProps extends Omit<IMaskInputProps<any>, 'onAccept'> {
+  mask: Mask<any>;
+  onChange?: React.ChangeEventHandler<HTMLInputElement>;
 }
 
-export const MaskedInputField = forwardRef<HTMLInputElement, MaskedInputFieldProps>
-(
+export const MaskedInputField = forwardRef<typeof IMaskInput, MaskedInputFieldProps>(
   ({ mask, onChange, ...props }, ref) => {
-    // Função para "adaptar" o onAccept do IMask para o onChange do React
     function handleAccept(value: string) {
       if (onChange) {
-        // Cria um evento sintético similar ao onChange normal do React
         onChange({
           target: { name: props.name, value },
         } as React.ChangeEvent<HTMLInputElement>);
@@ -23,10 +23,10 @@ export const MaskedInputField = forwardRef<HTMLInputElement, MaskedInputFieldPro
       <IMaskInput
         {...props}
         mask={mask}
-        inputRef={ref}
+        ref={ref}
         className="w-full bg-transparent outline-none flex-1 outline-0 text-pink400"
         onAccept={handleAccept}
       />
-    )
+    );
   }
 );
