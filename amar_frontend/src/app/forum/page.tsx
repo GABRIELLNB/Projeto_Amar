@@ -42,7 +42,7 @@ type Mensagem = {
 
 export default function Forum() {
   const params = useParams();
-  const forumId = params.forumId;
+  
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [sidebarWidth, setSidebarWidth] = useState(350);
   const sidebarRef = useRef<HTMLDivElement>(null);
