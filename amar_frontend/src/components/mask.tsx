@@ -6,7 +6,8 @@ interface MaskedInputFieldProps extends React.InputHTMLAttributes<HTMLInputEleme
   mask: string;
 }
 
-export const MaskedInputField = forwardRef<React.ElementRef<typeof IMaskInput>, MaskedInputFieldProps>(
+export const MaskedInputField = forwardRef<HTMLInputElement, MaskedInputFieldProps>
+(
   ({ mask, onChange, ...props }, ref) => {
     // Função para "adaptar" o onAccept do IMask para o onChange do React
     function handleAccept(value: string) {
