@@ -40,16 +40,12 @@ type Mensagem = {
   data_envio: string; // timestamp da mensagem
 };
 
-type ForumProps = {
-  forumId: number;
-  inicialmenteGostei: boolean;
-  inicialmenteQuantidade: number;
+type Props = {
+  params: { forumId: string };
 };
-export default function Forum({
-  forumId,
-  inicialmenteGostei,
-  inicialmenteQuantidade,
-}: ForumProps) {
+
+export default async function Forum({ params }: Props) {
+  const forumId = params.forumId;
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [sidebarWidth, setSidebarWidth] = useState(350);
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -209,7 +205,6 @@ export default function Forum({
       setCurtidasState(estadoInicial);
     }
   }, [foruns]);
-
   // controla se o modal está aberto
   const [excluirModal, setExcluirModal] = useState(false);
 
@@ -244,7 +239,7 @@ export default function Forum({
 
 
   const [buscaForuns, setBuscaForuns] = useState("");
-  function filtrarForuns(foruns: Forum[], termoBusca: string) {
+  function filtrarForuns(foruns: ForumsDisponiveis[], termoBusca: string) {
   if (!termoBusca) return foruns;
 
   const lowerTerm = termoBusca.toLowerCase();
@@ -338,6 +333,7 @@ export default function Forum({
 
                       <div className="absolute bottom-0 right-1 scale-70">
                         <BotaoGostei
+                        key={forumId} // <- força o React a reconstruir o componente se `forumId` mudar
                           forumId={forum.id}
                           inicialmenteGostei={
                             curtidasState[forum.id]?.gostei ?? false
@@ -529,33 +525,25 @@ export default function Forum({
 
             {/* Input de mensagem */}
             <div className="p-4 border-t border-pink2000 max-w-xl mx-auto">
-              <ChatInput
-                forumId={selectedForum?.id ?? 0}
-                inicialmenteGostei={
-                  selectedForum
-                    ? curtidasState[selectedForum.id]?.gostei ?? false
-                    : false
-                }
-                inicialmenteQuantidade={
-                  selectedForum
-                    ? curtidasState[selectedForum.id]?.quantidade ?? 0
-                    : 0
-                }
-                onCurtirChange={(novoGostei, novaQuantidade) => {
-                  if (selectedForum) {
-                    setCurtidasState((prev) => ({
-                      ...prev,
-                      [selectedForum.id]: {
-                        gostei: novoGostei,
-                        quantidade: novaQuantidade,
-                      },
-                    }));
-                  }
-                }}
-                onNovaMensagem={(msg) => {
-                  setMensagens((prev) => [...prev, msg]);
-                }}
-              />
+<ChatInput
+  forumId={selectedForum?.id ?? 0}
+  inicialmenteGostei={selectedForum ? curtidasState[selectedForum.id]?.gostei ?? false : false}
+  inicialmenteQuantidade={selectedForum ? curtidasState[selectedForum.id]?.quantidade ?? 0 : 0}
+  onCurtirChange={(novoGostei, novaQuantidade) => {
+    if (selectedForum) {
+      setCurtidasState((prev) => ({
+        ...prev,
+        [selectedForum.id]: {
+          gostei: novoGostei,
+          quantidade: novaQuantidade,
+        },
+      }));
+    }
+  }}
+  onNovaMensagem={(msg) => {
+    setMensagens((prev) => [...prev, msg]);
+  }}
+/>
             </div>
           </>
         ) : (
