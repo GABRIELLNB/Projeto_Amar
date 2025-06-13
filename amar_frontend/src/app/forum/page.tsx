@@ -8,7 +8,7 @@ import { IconButton } from "@/components/icon-button";
 import { InputField, InputRoot } from "@/components/input";
 import { ArrowLeft, CircleX, Send } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams  } from "next/navigation";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 
 type ForumsDisponiveis = {
@@ -40,14 +40,9 @@ type Mensagem = {
   data_envio: string; // timestamp da mensagem
 };
 
-type Props = {
-  params: {
-    forumId: string;
-  };
-};
-
-export default function Forum({ params }: Props) {
-  const { forumId } = params;
+export default function Forum() {
+  const params = useParams();
+  const forumId = params.forumId;
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [sidebarWidth, setSidebarWidth] = useState(350);
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -241,7 +236,7 @@ export default function Forum({ params }: Props) {
 
 
   const [buscaForuns, setBuscaForuns] = useState("");
-  function filtrarForuns(foruns: Forum[], termoBusca: string) {
+  function filtrarForuns(foruns: ForumsDisponiveis[], termoBusca: string) {
   if (!termoBusca) return foruns;
 
   const lowerTerm = termoBusca.toLowerCase();
