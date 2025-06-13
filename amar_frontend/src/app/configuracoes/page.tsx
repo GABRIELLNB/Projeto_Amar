@@ -59,6 +59,7 @@ export default function Configuracoes() {
   const [userName, setUserName] = useState<string>("");
 
   useEffect(() => {
+    f (typeof window !== "undefined") {
     const storedUserType = localStorage.getItem("user_type") as
       | "profissional"
       | "estagiario"
@@ -68,6 +69,7 @@ export default function Configuracoes() {
 
     if (storedUserType) setUserType(storedUserType);
     setUserName(storedUserName);
+    }
   }, []);
 
   return (
