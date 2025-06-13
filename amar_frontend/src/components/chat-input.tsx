@@ -5,7 +5,6 @@ import { useRef, useState, useEffect } from 'react'
 import { Button } from './button'
 import { BotaoGostei } from './gostei'
 
-
 function useClickOutside<T extends HTMLElement | null>(ref: React.RefObject<T>, handler: () => void) {
   useEffect(() => {
     function onClick(event: MouseEvent) {
@@ -19,6 +18,8 @@ function useClickOutside<T extends HTMLElement | null>(ref: React.RefObject<T>, 
     }
   }, [ref, handler])
 }
+
+type MessageType = any;
 
 export function ChatInput({
   forumId,
