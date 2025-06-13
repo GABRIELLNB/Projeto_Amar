@@ -330,7 +330,7 @@ export default function Forum() {
 
                       <div className="absolute bottom-0 right-1 scale-70">
                         <BotaoGostei
-                        key={forum.id} // <- força o React a reconstruir o componente se `forumId` mudar
+                        // <- força o React a reconstruir o componente se `forumId` mudar
                           forumId={forum.id}
                           inicialmenteGostei={
                             curtidasState[forum.id]?.gostei ?? false
