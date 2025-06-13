@@ -9,7 +9,7 @@ export function BotaoGostei({
   inicialmenteQuantidade = 0,
   onCurtirChange, // callback opcional
 }: {
-  forumId: number;
+  forumId?: number;
   inicialmenteGostei?: boolean;
   inicialmenteQuantidade?: number;
   onCurtirChange?: (novoGostei: boolean, novaQuantidade: number) => void;
