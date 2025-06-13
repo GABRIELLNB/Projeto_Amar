@@ -59,16 +59,16 @@ export default function Configuracoes() {
   const [userName, setUserName] = useState<string>("");
 
   useEffect(() => {
-    f (typeof window !== "undefined") {
-    const storedUserType = localStorage.getItem("user_type") as
-      | "profissional"
-      | "estagiario"
-      | "outro"
-      | null;
-    const storedUserName = localStorage.getItem("user_name") || "";
+    if (typeof window !== "undefined") {
+      const storedUserType = localStorage.getItem("user_type") as
+        | "profissional"
+        | "estagiario"
+        | "outro"
+        | null;
+      const storedUserName = localStorage.getItem("user_name") || "";
 
-    if (storedUserType) setUserType(storedUserType);
-    setUserName(storedUserName);
+      if (storedUserType) setUserType(storedUserType);
+      setUserName(storedUserName);
     }
   }, []);
 
