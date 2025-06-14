@@ -35,15 +35,20 @@ export default function Configuracoes() {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isExit, setIsExit] = useState(false);
 
+
   const handleLogout = () => {
     // Limpar dados de autenticação
-    localStorage.removeItem("token"); // ou sessionStorage.clear(), etc.
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("token"); // ou sessionStorage.clear(), etc.
 
-    // Redirecionar sem deixar rastros no histórico
-    router.replace("/");
+      // Redirecionar sem deixar rastros no histórico
+      router.replace("/");
+    }
   };
 
+
   const copyToClipboard = async (text: string) => {
+    if (typeof window !== "undefined" && navigator?.clipboard) {
     try {
       await navigator.clipboard.writeText(text);
       alert("Copiado para a área de transferência!");
@@ -51,6 +56,7 @@ export default function Configuracoes() {
       alert("Erro ao copiar.");
       console.error("Falha ao copiar: ", err);
     }
+  }
   };
 
   const [userType, setUserType] = useState<
