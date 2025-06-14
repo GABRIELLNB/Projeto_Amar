@@ -252,13 +252,10 @@ const [userName, setUserName] = useState("");
 const [isClient, setIsClient] = useState(false);
 
 useEffect(() => {
-  setIsClient(true); // só ativa no client
-  if (typeof window !== "undefined") {
-    const storedName = localStorage.getItem("user_name");
-    if (storedName) setUserName(storedName);
-  }
+  setIsClient(true); // indica que está no cliente
+  const storedName = localStorage.getItem("user_name");
+  if (storedName) setUserName(storedName);
 }, []);
-
 
 if (!isClient) return null; // evita renderização no build
 
