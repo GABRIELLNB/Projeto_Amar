@@ -618,19 +618,19 @@ class ForumsAPIView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = ForumsSerializer(data=request.data)
+        serializer = ForumsSerializer(data=request.data, context={'request': request})  # 👈 adicionado context
         if serializer.is_valid():
             serializer.save(criador=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
     def put(self, request, pk):
         try:
             forum = Forums.objects.get(pk=pk)
         except Forums.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        serializer = ForumsSerializer(forum, data=request.data)
+        serializer = ForumsSerializer(forum, data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -652,12 +652,13 @@ class ForumDetailAPIView(APIView):
 
     def get(self, request, pk):
         forum = self.get_object(pk)
-        serializer = ForumsSerializer(forum)
+        serializer = ForumsSerializer(forum, context={'request': request})  # 👈 adicionado context
         return Response(serializer.data)
+
 
     def put(self, request, pk):
         forum = self.get_object(pk)
-        serializer = ForumsSerializer(forum, data=request.data)
+        serializer = ForumsSerializer(forum, data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)

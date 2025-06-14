@@ -8,7 +8,7 @@ import { IconButton } from "@/components/icon-button";
 import { InputField, InputRoot } from "@/components/input";
 import { ArrowLeft, CircleX, Send } from "lucide-react";
 import Image from "next/image";
-import { useRouter, useParams  } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 
 type ForumsDisponiveis = {
@@ -23,7 +23,7 @@ type ForumsDisponiveis = {
   nome: string;
   publicacao: string;
   total_curtidas: number;
-  curtiu: boolean; // indica se o usuário atual curtiu o fórum
+  curtiu: boolean;
 };
 
 type Mensagem = {
@@ -37,19 +37,20 @@ type Mensagem = {
     foto_perfil: string;
   };
   mensagem: string;
-  data_envio: string; // timestamp da mensagem
+  data_envio: string;
 };
 
 export default function Forum() {
   const params = useParams();
-  const forumId = params.forumId ? Number(params.forumId) : null
+  const forumId = params.forumId ? Number(params.forumId) : null;
+  const router = useRouter();
+
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [sidebarWidth, setSidebarWidth] = useState(350);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isResizing = useRef(false);
   const minWidth = 300;
   const maxWidth = 400;
-  const router = useRouter();
 
   const startResizing = () => {
     isResizing.current = true;
@@ -66,6 +67,15 @@ export default function Forum() {
     setSidebarWidth(newWidth);
   }, []);
 
+  useEffect(() => {
+    window.addEventListener("mousemove", resize);
+    window.addEventListener("mouseup", stopResizing);
+    return () => {
+      window.removeEventListener("mousemove", resize);
+      window.removeEventListener("mouseup", stopResizing);
+    };
+  }, [resize, stopResizing]);
+
   const [tabAtiva, setTabAtiva] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -80,113 +90,69 @@ export default function Forum() {
     }
   };
 
-  useEffect(() => {
-    window.addEventListener("mousemove", resize);
-    window.addEventListener("mouseup", stopResizing);
-    return () => {
-      window.removeEventListener("mousemove", resize);
-      window.removeEventListener("mouseup", stopResizing);
-    };
-  }, [resize, stopResizing]);
-
   const [selectedForum, setSelectedForum] = useState<ForumsDisponiveis | null>(
     null
   );
   const [foruns, setForuns] = useState<ForumsDisponiveis[]>([]);
-  useEffect(() => {
-    const token = localStorage.getItem("token");
+  const [mensagens, setMensagens] = useState<Mensagem[]>([]);
+  const [novoTitulo, setNovoTitulo] = useState("");
+  const [novaDescricao, setNovaDescricao] = useState("");
+  const [curtidasState, setCurtidasState] = useState<{
+    [forumId: number]: { gostei: boolean; quantidade: number };
+  }>({});
+  const [excluirModal, setExcluirModal] = useState(false);
+  const [forumParaExcluir, setForumParaExcluir] =
+    useState<ForumsDisponiveis | null>(null);
+  const [buscaForuns, setBuscaForuns] = useState("");
+  const [userName, setUserName] = useState("");
+  const [isClient, setIsClient] = useState(false);
 
-    fetch("http://localhost:8000/api/forum/", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error(`Erro ${res.status}`);
-        return res.json();
-      })
-      .then((data: ForumsDisponiveis[]) => setForuns(data))
-      .catch((err) => console.error("Erro ao buscar fóruns:", err));
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setIsClient(true);
+    const storedName = localStorage.getItem("user_name");
+    if (storedName) setUserName(storedName);
   }, []);
 
-  const [mensagens, setMensagens] = useState<Mensagem[]>([]);
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   useEffect(() => {
-    if (!selectedForum) {
+    if (!token) return;
+
+    fetch("http://localhost:8000/api/forum/", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) =>
+        res.ok ? res.json() : Promise.reject(`Erro ${res.status}`)
+      )
+      .then((data: ForumsDisponiveis[]) => setForuns(data))
+      .catch((err) => console.error("Erro ao buscar fóruns:", err));
+  }, [token]);
+
+  useEffect(() => {
+    if (!selectedForum || !token) {
       setMensagens([]);
       return;
     }
 
-    const token = localStorage.getItem("token");
     fetch(
       `http://localhost:8000/api/mensagem-forum/forum/${selectedForum.id}`,
       {
         headers: { Authorization: `Bearer ${token}` },
       }
     )
-      .then((res) => {
-        if (!res.ok) throw new Error(`Erro ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        console.log("Mensagens recebidas:", data);
-        setMensagens(Array.isArray(data) ? data : data ? [data] : []);
-      })
+      .then((res) =>
+        res.ok ? res.json() : Promise.reject(`Erro ${res.status}`)
+      )
+      .then((data) => setMensagens(Array.isArray(data) ? data : [data]))
       .catch((err) => console.error("Erro ao buscar mensagens:", err));
-  }, [selectedForum]);
-  // Caso a API não filtre por fórum, filtra aqui
-  const mensagensDoForum = mensagens.filter(
-    (m) => m.forum === selectedForum?.id
-  );
+  }, [selectedForum, token]);
 
-  const bottomRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [mensagensDoForum]);
-
-  const [novoTitulo, setNovoTitulo] = useState("");
-  const [novaDescricao, setNovaDescricao] = useState("");
-  const token = localStorage.getItem("token");
-
-  const formatarDataSimples = (date: Date) => {
-    const dia = String(date.getDate()).padStart(2, "0");
-    const mes = String(date.getMonth() + 1).padStart(2, "0"); // mês começa em 0
-    const ano = date.getFullYear();
-    return `${dia}-${mes}-${ano}`;
-  };
-
-  const criarForum = async () => {
-    try {
-      const dataCriacao = formatarDataSimples(new Date());
-
-      const response = await fetch("http://localhost:8000/api/forum/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // se estiver usando JWT
-        },
-        body: JSON.stringify({
-          nome: novoTitulo,
-          publicacao: dataCriacao,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Fórum criado com sucesso:", data);
-        setForuns((prev) => [...prev, data]);
-        setNovoTitulo("");
-      } else {
-        const erro = await response.json();
-        console.error("Erro ao criar fórum:", erro);
-      }
-    } catch (error) {
-      console.error("Erro ao conectar com o servidor:", error);
-    }
-  };
-  const [curtidasState, setCurtidasState] = useState<{
-    [forumId: number]: { gostei: boolean; quantidade: number };
-  }>({});
+  }, [mensagens]);
 
   useEffect(() => {
     if (foruns.length > 0) {
@@ -202,15 +168,59 @@ export default function Forum() {
       setCurtidasState(estadoInicial);
     }
   }, [foruns]);
-  // controla se o modal está aberto
-  const [excluirModal, setExcluirModal] = useState(false);
 
-  // guarda qual fórum o usuário clicou para excluir
-  const [forumParaExcluir, setForumParaExcluir] =
-    useState<ForumsDisponiveis | null>(null);
+  const formatarDataSimples = (date: Date) => {
+    const dia = String(date.getDate()).padStart(2, "0");
+    const mes = String(date.getMonth() + 1).padStart(2, "0");
+    const ano = date.getFullYear();
+    return `${dia}-${mes}-${ano}`;
+  };
 
-  async function excluirForum(forumId: number) {
-    const token = localStorage.getItem("token");
+const [enviando, setEnviando] = useState(false);
+
+const criarForum = async (e?: React.FormEvent) => {
+  if (e) e.preventDefault();
+  if (enviando) return; // bloqueia se já estiver enviando
+
+  setEnviando(true);
+  setNovoTitulo("");  // Limpa o input na hora do clique
+  try {
+    const dataCriacao = formatarDataSimples(new Date());
+    const responseCriacao = await fetch("http://localhost:8000/api/forum/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        nome: novoTitulo,
+        publicacao: dataCriacao,
+      }),
+    });
+
+    if (responseCriacao.ok) {
+      const novoForum = await responseCriacao.json();
+      console.log("Fórum criado com sucesso:", novoForum);
+
+      const responseLista = await fetch("http://localhost:8000/api/forum/", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const listaAtualizada = await responseLista.json();
+      setForuns(listaAtualizada);
+      setNovoTitulo("");
+    } else {
+      const erro = await responseCriacao.json();
+      console.error("Erro ao criar fórum:", erro);
+    }
+  } catch (error) {
+    console.error("Erro ao conectar com o servidor:", error);
+  } finally {
+    setEnviando(false);
+  }
+};
+
+
+  const excluirForum = async (forumId: number) => {
     try {
       const res = await fetch(`http://localhost:8000/api/forum/${forumId}/`, {
         method: "DELETE",
@@ -218,12 +228,9 @@ export default function Forum() {
       });
 
       if (res.status === 204) {
-        // remove da lista local
         setForuns((prev) => prev.filter((f) => f.id !== forumId));
-        // fecha o modal e limpa seleção
         setExcluirModal(false);
         setForumParaExcluir(null);
-        // se estava selecionado, limpa
         if (selectedForum?.id === forumId) setSelectedForum(null);
       } else {
         alert("Erro ao excluir fórum");
@@ -231,34 +238,20 @@ export default function Forum() {
     } catch (err) {
       console.error("Erro ao excluir fórum", err);
     }
-  }
+  };
 
-
-
-  const [buscaForuns, setBuscaForuns] = useState("");
-  function filtrarForuns(foruns: ForumsDisponiveis[], termoBusca: string) {
-  if (!termoBusca) return foruns;
-
-  const lowerTerm = termoBusca.toLowerCase();
-
-  return foruns.filter(({ nome, criador }) =>
-    (nome?.toLowerCase() || "").includes(lowerTerm) ||
-    (criador?.nome?.toLowerCase() || "").includes(lowerTerm)
+  const filtrarForuns = (foruns: ForumsDisponiveis[], termoBusca: string) => {
+    if (!termoBusca) return foruns;
+    const lowerTerm = termoBusca.toLowerCase();
+    return foruns.filter(
+      ({ nome, criador }) =>
+        (nome?.toLowerCase() || "").includes(lowerTerm) ||
+        (criador?.nome?.toLowerCase() || "").includes(lowerTerm)
+    );
+  };
+  const mensagensDoForum = mensagens.filter(
+    (m) => m.forum === selectedForum?.id
   );
-}
-
-
-const [userName, setUserName] = useState("");
-const [isClient, setIsClient] = useState(false);
-
-useEffect(() => {
-  setIsClient(true); // indica que está no cliente
-  const storedName = localStorage.getItem("user_name");
-  if (storedName) setUserName(storedName);
-}, []);
-
-if (!isClient) return null; // evita renderização no build
-
   return (
     <>
       {/* Sidebar */}
@@ -278,20 +271,19 @@ if (!isClient) return null; // evita renderização no build
           >
             <ArrowLeft />
           </IconButton>
-          <h1 className="text-pink1000 justify-between text-2xl font-semibold ml-5">FÓRUNS</h1>
+          <h1 className="text-pink1000 justify-between text-2xl font-semibold ml-5">
+            FÓRUNS
+          </h1>
         </div>
 
         {/* Busca sticky logo abaixo */}
         <div className="sticky top-20 z-40 bg-pink3000 p-2 border-b border-pink3000 ">
-          
-  <BuscaPorNome
-    valor={buscaForuns}
-    aoAlterar={setBuscaForuns}
-    placeholder="Buscar por nome do fórum ou criador"
-    className="max-w-xs"
-  />
-
-
+          <BuscaPorNome
+            valor={buscaForuns}
+            aoAlterar={setBuscaForuns}
+            placeholder="Buscar do fórum "
+            className="max-w-xs"
+          />
         </div>
 
         {/* Botões*/}
@@ -318,125 +310,132 @@ if (!isClient) return null; // evita renderização no build
           <div className="flex space-x-4">
             {tabAtiva === 0 && (
               <div className="flex-1 space-y-4">
-                 {filtrarForuns(
-      foruns.filter((forum) => forum.criador.nome !== userName),
-      buscaForuns
-    ).map((forum) => (
-      <Button key={forum.id}
-                      onClick={() => setSelectedForum(forum)}
-                      className="relative group rounded-br-none flex justify-between cursor-pointer rounded-2xl border border-pink1000 items-start px-6 pt-4 pb-8 bg-pink1000 text-pink2000 font-semibold w-full"
-                    >
-                      <span className="text-left">
-                        <div className="absolute top-1 left-6 scale-75 text-pink4000 mb-4">
-                          {forum.criador.nome}
-                        </div>
-                        <strong className="block mt-2">{forum.nome}</strong>{" "}
-                        <br />
-                        <div className="absolute bottom-[-4] left-0 scale-55 mb-1 text-pink4000">
-                          {forum.publicacao}
-                        </div>
-                      </span>
-
-                      <div className="absolute bottom-0 right-1 scale-70">
-                        <BotaoGostei
-                        // <- força o React a reconstruir o componente se `forumId` mudar
-                          forumId={forum.id}
-                          inicialmenteGostei={
-                            curtidasState[forum.id]?.gostei ?? false
-                          }
-                          inicialmenteQuantidade={
-                            curtidasState[forum.id]?.quantidade ?? 0
-                          }
-                          onCurtirChange={(novoGostei, novaQuantidade) => {
-                            setCurtidasState((prev) => ({
-                              ...prev,
-                              [forum.id]: {
-                                gostei: novoGostei,
-                                quantidade: novaQuantidade,
-                              },
-                            }));
-                          }}
-                        />
+                {filtrarForuns(
+                  foruns.filter((forum) => forum.criador.nome !== userName),
+                  buscaForuns
+                ).map((forum) => (
+                  <Button
+                    key={forum.id}
+                    onClick={() => setSelectedForum(forum)}
+                    className="relative group rounded-br-none flex justify-between cursor-pointer rounded-2xl border border-pink1000 items-start px-6 pt-4 pb-8 bg-pink1000 text-pink2000 font-semibold w-full"
+                  >
+                    <span className="text-left">
+                      <div className="absolute top-1 left-6 scale-75 text-pink4000 mb-4">
+                        {forum.criador.nome}
                       </div>
-                    </Button>
-                    
-                  ))}
+                      <strong className="block mt-2">{forum.nome}</strong>{" "}
+                      <br />
+                      <div className="absolute bottom-[-4] left-0 scale-55 mb-1 text-pink4000">
+                        {forum.publicacao}
+                      </div>
+                    </span>
+
+                    <div className="absolute bottom-0 right-1 scale-70">
+                      <BotaoGostei
+                        // <- força o React a reconstruir o componente se `forumId` mudar
+                        forumId={forum.id}
+                        inicialmenteGostei={
+                          curtidasState[forum.id]?.gostei ?? false
+                        }
+                        inicialmenteQuantidade={
+                          curtidasState[forum.id]?.quantidade ?? 0
+                        }
+                        onCurtirChange={(novoGostei, novaQuantidade) => {
+                          setCurtidasState((prev) => ({
+                            ...prev,
+                            [forum.id]: {
+                              gostei: novoGostei,
+                              quantidade: novaQuantidade,
+                            },
+                          }));
+                        }}
+                      />
+                    </div>
+                  </Button>
+                ))}
               </div>
             )}
 
             {tabAtiva === 1 && (
               <div className="flex-1 space-y-4">
-                                {filtrarForuns(
-      foruns.filter((forum) => forum.criador.nome === userName),
-      buscaForuns
-    ).map((forum) => (
-      <Button key={forum.id}
-                      onClick={() => setSelectedForum(forum)}
-                      className="relative group rounded-br-none flex justify-between shadow transition-colors duration-300 hover:border-pink2000 rounded-2xl border cursor-pointer border-pink1000 items-start px-6 pt-4 pb-8 bg-pink1000 text-pink2000 font-semibold w-full"
-                    >
-                      <span className="text-left">
-                        <div className="absolute top-1 left-6 scale-75 text-pink4000 mb-4">
-                          {forum.criador.nome}
-                        </div>
-                        <strong className="block mt-2">{forum.nome}</strong>{" "}
-                        <br />
-                        <div className="absolute bottom-[-4] left-0 scale-55 mb-1 text-pink4000">
-                          {forum.publicacao}
-                        </div>
-                      </span>
-                      <IconButton
-                        className="absolute top-2 right-2 p-1.5 bg-pink1000 text-red rounded-md cursor-pointer transition-colors duration-300 hover:text-pink4000"
-                        onClick={(e) => {
-                          e.stopPropagation(); // evita selecionar o fórum
-                          setForumParaExcluir(forum); // guarda qual vai excluir
-                          setExcluirModal(true); // abre modal
-                        }}
-                      >
-                        <CircleX size={15} />
-                      </IconButton>
-                      <div className="absolute bottom-0 right-1 scale-70">
-                        {forumId &&<BotaoGostei
-                          forumId={forum.id}
-                          inicialmenteGostei={
-                            curtidasState[forum.id]?.gostei ?? false
-                          }
-                          inicialmenteQuantidade={
-                            curtidasState[forum.id]?.quantidade ?? 0
-                          }
-                          onCurtirChange={(novoGostei, novaQuantidade) => {
-                            setCurtidasState((prev) => ({
-                              ...prev,
-                              [forum.id]: {
-                                gostei: novoGostei,
-                                quantidade: novaQuantidade,
-                              },
-                            }));
-                          }}
-                        />}
+                {filtrarForuns(
+                  foruns.filter((forum) => forum.criador.nome === userName),
+                  buscaForuns
+                ).map((forum) => (
+                  <Button
+                    key={forum.id}
+                    onClick={() => setSelectedForum(forum)}
+                    className="relative group rounded-br-none flex justify-between shadow transition-colors duration-300 hover:border-pink2000 rounded-2xl border cursor-pointer border-pink1000 items-start px-6 pt-4 pb-8 bg-pink1000 text-pink2000 font-semibold w-full"
+                  >
+                    <span className="text-left">
+                      <div className="absolute top-1 left-6 scale-75 text-pink4000 mb-4">
+                        {forum.criador.nome}
                       </div>
-                    </Button>
-                  ))}
+                      <strong className="block mt-2">{forum.nome}</strong>{" "}
+                      <br />
+                      <div className="absolute bottom-[-4] left-0 scale-55 mb-1 text-pink4000">
+                        {forum.publicacao}
+                      </div>
+                    </span>
+                    <IconButton
+                      className="absolute top-2 right-2 p-1.5 bg-pink1000 text-red rounded-md cursor-pointer transition-colors duration-300 hover:text-pink4000"
+                      onClick={(e) => {
+                        e.stopPropagation(); // evita selecionar o fórum
+                        setForumParaExcluir(forum); // guarda qual vai excluir
+                        setExcluirModal(true); // abre modal
+                      }}
+                    >
+                      <CircleX size={15} />
+                    </IconButton>
+                    <div className="absolute bottom-0 right-1 scale-70">
+                      <BotaoGostei
+                        // <- força o React a reconstruir o componente se `forumId` mudar
+                        forumId={forum.id}
+                        inicialmenteGostei={
+                          curtidasState[forum.id]?.gostei ?? false
+                        }
+                        inicialmenteQuantidade={
+                          curtidasState[forum.id]?.quantidade ?? 0
+                        }
+                        onCurtirChange={(novoGostei, novaQuantidade) => {
+                          setCurtidasState((prev) => ({
+                            ...prev,
+                            [forum.id]: {
+                              gostei: novoGostei,
+                              quantidade: novaQuantidade,
+                            },
+                          }));
+                        }}
+                      />
+                    </div>
+                  </Button>
+                ))}
               </div>
             )}
           </div>
         </div>
         {/* Rodapé com campos de título e descrição para criar fórum */}
-        <div className="flex items-center p-4 border-t border-pink2000 rounded-tr-2xl bg-pink2000 gap-2">
-          <InputRoot className="flex-20 bg-pink3000 h-10 border border-pink2000 rounded-xl px-4 flex items-center gap-2 focus-within:border-pink4000">
-            <InputField
-              placeholder="Nome do fórum"
-              value={novoTitulo}
-              onChange={(e) => setNovoTitulo(e.target.value)}
-            />
-          </InputRoot>
 
-          <Button
-            onClick={criarForum}
-            className="ml-2 bg-pink4000 text-pink1000 p-2 rounded-2xl hover:bg-pink1000 transition-colors duration-300 hover:text-pink4000"
-          >
-            <Send className="w-5 h-5 cursor-pointer" />
-          </Button>
-        </div>
+<div className="flex items-center p-4 border-t border-pink2000 rounded-tr-2xl bg-pink2000 gap-2">
+  <InputRoot className="flex-20 bg-pink3000 h-10 border border-pink2000 rounded-xl px-4 flex items-center gap-2 focus-within:border-pink4000">
+    <InputField
+      placeholder="Nome do fórum"
+      value={novoTitulo}
+      onChange={(e) => setNovoTitulo(e.target.value)}
+    />
+  </InputRoot>
+
+<Button
+  type="submit"
+  onClick={criarForum}
+  disabled={enviando}
+  className={`ml-2 p-2 rounded-2xl transition-colors duration-300
+    ${enviando ? "bg-pink2000 text-pink500 cursor-not-allowed" : "bg-pink4000 text-pink1000 hover:bg-pink1000 hover:text-pink4000"}`}
+>
+  <Send className="w-5 h-5 cursor-pointer" />
+</Button>
+</div>
+       
       </div>
 
       {/* Drag da sidebar */}
@@ -531,25 +530,33 @@ if (!isClient) return null; // evita renderização no build
 
             {/* Input de mensagem */}
             <div className="p-4 border-t border-pink2000 max-w-xl mx-auto">
-<ChatInput
-  forumId={selectedForum?.id ?? 0}
-  inicialmenteGostei={selectedForum ? curtidasState[selectedForum.id]?.gostei ?? false : false}
-  inicialmenteQuantidade={selectedForum ? curtidasState[selectedForum.id]?.quantidade ?? 0 : 0}
-  onCurtirChange={(novoGostei, novaQuantidade) => {
-    if (selectedForum) {
-      setCurtidasState((prev) => ({
-        ...prev,
-        [selectedForum.id]: {
-          gostei: novoGostei,
-          quantidade: novaQuantidade,
-        },
-      }));
-    }
-  }}
-  onNovaMensagem={(msg) => {
-    setMensagens((prev) => [...prev, msg]);
-  }}
-/>
+              <ChatInput
+                forumId={selectedForum?.id ?? 0}
+                inicialmenteGostei={
+                  selectedForum
+                    ? curtidasState[selectedForum.id]?.gostei ?? false
+                    : false
+                }
+                inicialmenteQuantidade={
+                  selectedForum
+                    ? curtidasState[selectedForum.id]?.quantidade ?? 0
+                    : 0
+                }
+                onCurtirChange={(novoGostei, novaQuantidade) => {
+                  if (selectedForum) {
+                    setCurtidasState((prev) => ({
+                      ...prev,
+                      [selectedForum.id]: {
+                        gostei: novoGostei,
+                        quantidade: novaQuantidade,
+                      },
+                    }));
+                  }
+                }}
+                onNovaMensagem={(msg) => {
+                  setMensagens((prev) => [...prev, msg]);
+                }}
+              />
             </div>
           </>
         ) : (

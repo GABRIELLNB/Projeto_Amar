@@ -20,3 +20,5 @@ export default function ProfissionalEditar({ params }: { params: Promise<{ id: s
     />
   );
 }
+
+

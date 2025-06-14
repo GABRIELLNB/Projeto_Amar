@@ -16,8 +16,11 @@ export default function Menu() {
 
   const [userType, setUserType] = useState<"profissional" | "estagiario" | "outro">("outro");
   const [userName, setUserName] = useState<string>("");
-    
+  const [isClient, setIsClient] = useState(false);
+
   useEffect(() => {
+      setIsClient(true); // só ativa no client
+      if (typeof window === "undefined") return;
       const storedUserType = localStorage.getItem("user_type") as
         | "profissional"
         | "estagiario"
@@ -30,6 +33,7 @@ export default function Menu() {
     }, []);
     
   useEffect(() => {
+    if (typeof window === "undefined") return;
     const token = localStorage.getItem('token')
 
     if (!token) {
@@ -59,7 +63,7 @@ export default function Menu() {
       })
   }, [router])
 
-
+  if (!isClient) return null // Evita renderização no build
   return (
     <div>
       <SidebarMenu userType={userType}

@@ -28,8 +28,11 @@ export default function Histórico() {
     "profissional" | "estagiario" | "outro"
   >("outro");
   const [userName, setUserName] = useState<string>("");
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true); // só ativa no client
+    if (typeof window === "undefined") return;
     const storedUserType = localStorage.getItem("user_type") as
       | "profissional"
       | "estagiario"
@@ -48,6 +51,7 @@ export default function Histórico() {
   };
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
     const token = localStorage.getItem("token");
     console.log("Token:", token);
 
@@ -101,6 +105,8 @@ export default function Histórico() {
       console.error("Erro ao cancelar consulta:", err);
     }
   };
+   if (!isClient) return null; // evita renderização no build
+
 
   return (
     <>
