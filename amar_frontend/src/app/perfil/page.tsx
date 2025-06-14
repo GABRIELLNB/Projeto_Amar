@@ -25,8 +25,10 @@ export default function EditarPerfil() {
 
   const [userType, setUserType] = useState<"profissional" | "estagiario" | "outro">("outro");
   const [userName, setUserName] = useState<string>("");
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true); // só ativa no client
     const storedUserType = localStorage.getItem("user_type") as
       | "profissional"
       | "estagiario"
@@ -36,6 +38,8 @@ export default function EditarPerfil() {
     if (storedUserType) setUserType(storedUserType);
     setUserName(storedUserName);
   }, []);
+
+ if (!isClient) return null; // evita renderização no build
 
   return (
     <div>
