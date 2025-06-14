@@ -26,8 +26,9 @@ export default function Consultas() {
 
   const [userType, setUserType] = useState<"profissional" | "estagiario" | "outro">("outro");
   const [userName, setUserName] = useState<string>("");
-  
+  const [isClient, setIsClient] = useState(false);
   useEffect(() => {
+    setIsClient(true); // só ativa no client
       const storedUserType = localStorage.getItem("user_type") as
         | "profissional"
         | "estagiario"
@@ -96,6 +97,8 @@ const cancelarAgendamento = async (id: number) => {
     console.error("Erro ao cancelar consulta:", err);
   }
 };
+ if (!isClient) return null; // evita renderização no build
+
 
   return (
     <>

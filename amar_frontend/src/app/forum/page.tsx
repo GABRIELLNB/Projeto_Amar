@@ -250,6 +250,8 @@ export default function Forum() {
 
   const userName = localStorage.getItem("user_name") || "";
 
+
+
   return (
     <>
       {/* Sidebar */}
