@@ -34,7 +34,30 @@ export default function Configuracoes() {
   const [isPolicy, setIsPolicy] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isExit, setIsExit] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
+
+
+  const [userType, setUserType] = useState<
+    "profissional" | "estagiario" | "outro"
+  >("outro");
+  const [userName, setUserName] = useState<string>("");
+
+  useEffect(() => {
+    setIsClient(true); // só ativa no client
+    if (typeof window !== "undefined") {
+      const storedUserType = localStorage.getItem("user_type") as
+        | "profissional"
+        | "estagiario"
+        | "outro"
+        | null;
+      const storedUserName = localStorage.getItem("user_name") || "";
+
+      if (storedUserType) setUserType(storedUserType);
+      setUserName(storedUserName);
+    }
+    
+  }, []);
 
   const handleLogout = () => {
     // Limpar dados de autenticação
@@ -58,25 +81,7 @@ export default function Configuracoes() {
     }
   }
   };
-
-  const [userType, setUserType] = useState<
-    "profissional" | "estagiario" | "outro"
-  >("outro");
-  const [userName, setUserName] = useState<string>("");
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedUserType = localStorage.getItem("user_type") as
-        | "profissional"
-        | "estagiario"
-        | "outro"
-        | null;
-      const storedUserName = localStorage.getItem("user_name") || "";
-
-      if (storedUserType) setUserType(storedUserType);
-      setUserName(storedUserName);
-    }
-  }, []);
+   if (!isClient) return null; // evita renderização no build
 
   return (
     <div>
