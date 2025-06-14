@@ -248,9 +248,19 @@ export default function Forum() {
 }
 
 
-  const userName = localStorage.getItem("user_name") || "";
+const [userName, setUserName] = useState("");
+const [isClient, setIsClient] = useState(false);
+
+useEffect(() => {
+  setIsClient(true); // só ativa no client
+  if (typeof window !== "undefined") {
+    const storedName = localStorage.getItem("user_name");
+    if (storedName) setUserName(storedName);
+  }
+}, []);
 
 
+if (!isClient) return null; // evita renderização no build
 
   return (
     <>
