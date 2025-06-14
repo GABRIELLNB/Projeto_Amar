@@ -21,12 +21,14 @@ interface SidebarMenuProps {
   userName: string;
   activeItem: string;
   userType: "profissional" | "estagiario" | "outro";
+  userImage?: string | null;
 }
 
 export default function SidebarMenu({
   userName,
   activeItem: propActiveItem,
   userType,
+  userImage,
 }: SidebarMenuProps) {
   const [activeSidebarItem, setActiveSidebarItem] = useState<string>(
     propActiveItem || "Menu"
@@ -114,36 +116,48 @@ export default function SidebarMenu({
     return `${dia}-${mes}-${ano}`;
   };
 
-  const criarForum = async () => {
-    try {
-      const dataCriacao = formatarDataSimples(new Date());
+const [enviando, setEnviando] = useState(false);
 
-      const response = await fetch("http://localhost:8000/api/forum/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // se estiver usando JWT
-        },
-        body: JSON.stringify({
-          nome: novoTitulo,
-          publicacao: dataCriacao,
-        }),
+const criarForum = async (e?: React.FormEvent) => {
+  if (e) e.preventDefault();
+  if (enviando) return; // bloqueia se já estiver enviando
+
+  setEnviando(true);
+  setNovoTitulo("");  // Limpa o input na hora do clique
+  try {
+    const dataCriacao = formatarDataSimples(new Date());
+    const responseCriacao = await fetch("http://localhost:8000/api/forum/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        nome: novoTitulo,
+        publicacao: dataCriacao,
+      }),
+    });
+
+    if (responseCriacao.ok) {
+      const novoForum = await responseCriacao.json();
+      console.log("Fórum criado com sucesso:", novoForum);
+
+      const responseLista = await fetch("http://localhost:8000/api/forum/", {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Fórum criado com sucesso:", data);
-        setForuns((prev) => [...prev, data]);
-        setNovoTitulo("");
-      } else {
-        const erro = await response.json();
-        console.error("Erro ao criar fórum:", erro);
-      }
-    } catch (error) {
-      console.error("Erro ao conectar com o servidor:", error);
+      const listaAtualizada = await responseLista.json();
+      setForuns(listaAtualizada);
+      setNovoTitulo("");
+    } else {
+      const erro = await responseCriacao.json();
+      console.error("Erro ao criar fórum:", erro);
     }
-  };
-
+  } catch (error) {
+    console.error("Erro ao conectar com o servidor:", error);
+  } finally {
+    setEnviando(false);
+  }
+};
   return (
     <>
       <div
@@ -156,11 +170,19 @@ export default function SidebarMenu({
 
         {/* Conteúdo principal */}
         <div className="flex-grow overflow-auto">
-          <div className="flex justify-center mt-10">
-            <IconButton className="w-50 h-50 rounded-full bg-pink1000 text-pink4000 hover:text-pink4000 flex items-center justify-center transition-colors duration-300">
-              <User className="w-30 h-30" />
-            </IconButton>
-          </div>
+<div className="flex justify-center mt-10">
+<IconButton className="w-50 h-50 rounded-full bg-pink1000 text-pink4000 hover:text-pink4000 flex items-center justify-center transition-colors duration-300 overflow-hidden">
+    {userImage ? (
+      <img
+        src={userImage}
+        alt="Foto do usuário"
+        className="object-cover w-full h-full rounded-full"
+      />
+    ) : (
+      <User className="w-30 h-30" />
+    )}
+  </IconButton>
+</div>
 
           <div className="flex justify-center mb-6">
             <h1 className="text-4xl font-bold text-pink4000">{userName}</h1>
@@ -204,8 +226,11 @@ export default function SidebarMenu({
           </InputRoot>
 
           <Button
+            type="submit"
             onClick={criarForum}
-            className="ml-2 bg-pink4000 text-pink1000 p-2 rounded-2xl hover:bg-pink1000 transition-colors duration-300 hover:text-pink4000"
+            disabled={enviando}
+            className={`ml-2 p-2 rounded-2xl transition-colors duration-300
+              ${enviando ? "bg-pink2000 text-pink500 cursor-not-allowed" : "bg-pink4000 text-pink1000 hover:bg-pink1000 hover:text-pink4000"}`}
           >
             <Send className="w-5 h-5 cursor-pointer" />
           </Button>

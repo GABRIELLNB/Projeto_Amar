@@ -1,51 +1,146 @@
-'use client'
+"use client";
 
-import { Button } from '@/components/button'
-import { IconButton } from '@/components/icon-button'
-import { InputField, InputIcon, InputRoot } from '@/components/input'
-import SidebarMenu from '@/components/sidebar-menu'
-import {jwtDecode} from 'jwt-decode'
+import { Button } from "@/components/button";
+import { IconButton } from "@/components/icon-button";
+import { InputField, InputIcon, InputRoot } from "@/components/input";
+import { MaskedInputField } from "@/components/mask";
+import SidebarMenu from "@/components/sidebar-menu";
 import {
-  ArrowLeft,
   Eye,
   EyeOff,
-  FileText,
   Fingerprint,
   Lock,
   Mail,
-  Phone,
-  SquarePen,
   User,
-} from 'lucide-react'
-import { useEffect, useState } from 'react'
+  SquarePen,
+  Phone,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 export default function EditarPerfil() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const [userType, setUserType] = useState<"profissional" | "estagiario" | "outro">("outro");
-  const [userName, setUserName] = useState<string>("");
+  const [userType, setUserType] = useState<
+    "profissional" | "estagiario" | "outro"
+  >("outro");
+  const [userName, setUserName] = useState("");
+
+  const [nome, setNome] = useState("");
+  const [cpf, setCpf] = useState("");
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [confirmarSenha, setConfirmarSenha] = useState("");
+  const [tel, setTel] = useState(""); // Adicionado
   const [isClient, setIsClient] = useState(false);
+  const [imagemPerfil, setImagemPerfil] = useState<string | null>(null);
+  const inputFileRef = useRef<HTMLInputElement>(null);
+  const [modalAberto, setModalAberto] = useState(false);
+  
 
   useEffect(() => {
-    setIsClient(true); // só ativa no client
+    setIsClient(true);
     const storedUserType = localStorage.getItem("user_type") as
       | "profissional"
       | "estagiario"
       | "outro";
     const storedUserName = localStorage.getItem("user_name") || "";
-
     if (storedUserType) setUserType(storedUserType);
     setUserName(storedUserName);
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    fetch("http://localhost:8000/api/usuario/perfil/", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error("Erro ao carregar perfil");
+        const data = await res.json();
+        setNome(data.nome || "");
+        setCpf(data.cpf || "");
+        setEmail(data.email || "");
+        setTel(data.telefone || "");
+      })
+      .catch(() => alert("Erro ao carregar perfil"));
   }, []);
 
- if (!isClient) return null; // evita renderização no build
+  
 
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+
+    if (senha !== confirmarSenha) {
+      alert("As senhas não coincidem");
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Você precisa estar logado");
+      return;
+    }
+
+    const payload: any = {
+      nome,
+      email,
+      telefone: tel,
+    };
+    if (senha.trim() !== "") {
+      payload.password = senha;
+    }
+
+    const response = await fetch("http://localhost:8000/api/usuario/perfil/", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (response.ok) {
+      alert("Perfil atualizado com sucesso!");
+      if (imagemPerfil) {
+        localStorage.setItem("imagem_perfil", imagemPerfil);
+      }
+      setSenha("");
+      setConfirmarSenha("");
+    } else {
+      alert("Erro ao atualizar perfil");
+    }
+  }
+
+  const handleImagemSelecionada = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagemPerfil(reader.result as string);
+        // Se quiser salvar para manter ao recarregar:
+        localStorage.setItem("imagem_perfil", reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Carregar do localStorage ao abrir
+  useEffect(() => {
+    const imagemSalva = localStorage.getItem("imagem_perfil");
+    if (imagemSalva) setImagemPerfil(imagemSalva);
+  }, []);
+
+  if (!isClient) return null;
   return (
     <div>
-       <SidebarMenu userType={userType}
-        userName={userName}
-        activeItem="Editar Perfil"/>
+      <SidebarMenu
+        userType={userType}
+        userName={nome}
+        activeItem="Editar Perfil"
+        userImage={imagemPerfil || null}
+      />
 
       <div className="ml-[360px] p-6 relative">
         <div className="gap-6 mt-[-50] px-6">
@@ -54,148 +149,167 @@ export default function EditarPerfil() {
               <div className="flex-grow overflow-auto">
                 <div className="flex justify-center mt-0 ">
                   <div className="relative w-fit mx-auto">
-                    <IconButton className="w-42 h-42 rounded-full bg-pink3000 text-pink4000 flex items-center justify-center">
-                      <User className="w-20 h-20" />
-                    </IconButton>
-
-                    {/* Botão de editar (ícone de lápis ou texto) */}
-                    <Button className="absolute bottom-2 right-2 bg-pink4000 text-pink1000 p-1 rounded-full hover:bg-pink2000 hover:text-pink1000 transition cursor-pointer">
+                    <IconButton
+          onClick={() => {
+            if (imagemPerfil) setModalAberto(true);
+          }}
+          className="w-42 h-42 rounded-full bg-pink3000 text-pink4000 flex items-center justify-center overflow-hidden cursor-pointer"
+          aria-label="Visualizar imagem ampliada"
+        >
+          {imagemPerfil ? (
+            <img
+              src={imagemPerfil}
+              alt="Perfil"
+              className="object-cover w-full h-full rounded-full"
+            />
+          ) : (
+            <User className="w-20 h-20" />
+          )}
+        </IconButton>
+                    <Button
+                      onClick={() => inputFileRef.current?.click()}
+                      className="absolute bottom-2 right-2 bg-pink4000 text-pink1000 p-1 rounded-full hover:bg-pink2000 hover:text-pink1000 transition cursor-pointer"
+                    >
                       <SquarePen />
                     </Button>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImagemSelecionada}
+                      ref={inputFileRef}
+                      className="hidden"
+                    />
                   </div>
+                        {modalAberto && (
+        <div
+          onClick={() => setModalAberto(false)}
+          className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 cursor-pointer "
+        >
+          <img
+            src={imagemPerfil!}
+            alt="Imagem ampliada"
+            className="max-w-[90vw] max-h-[90vh] rounded-full shadow-lg"
+            onClick={(e) => e.stopPropagation()} // para evitar fechar ao clicar na imagem
+          />
+        </div>
+      )}
+
                 </div>
 
                 <div className="flex justify-center mb-2">
-                  <h1 className="text-3xl font-bold text-pink4000">
-                    Paulo Avelino
-                  </h1>
+                  <h1 className="text-3xl font-bold text-pink4000">{nome}</h1>
                 </div>
               </div>
-              <form className="space-y-4">
-                <div>
-                  <label
-                    htmlFor="nome"
-                    className="block text-sm font-medium text-pink2000 mb-1"
-                  >
-                    Nome
-                  </label>
-                  <InputRoot className="group bg-pink1000 h-10 border border-pink2000 rounded-sm px-4 flex items-center gap-2 focus-within:border-pink4000 data-[error=true]:border-red-700">
-                    <InputIcon>
-                      <User />
-                    </InputIcon>
-                    <InputField
-                      id="nome"
-                      placeholder="Digite seu nome"
-                      defaultValue="Paulo Avelino"
-                    />
-                  </InputRoot>
-                </div>
-                <div>
-                  <label
-                    htmlFor="nome"
-                    className="block text-sm font-medium text-pink2000 mb-1"
-                  >
-                    CPF
-                  </label>
-                  <InputRoot className="group bg-pink1000 h-10 border border-pink2000 rounded-sm px-4 flex items-center gap-2 focus-within:border-pink4000 data-[error=true]:border-red-700">
-                    <InputIcon>
-                      <Fingerprint />
-                    </InputIcon>
-                    <InputField
-                      id="cpf"
-                      placeholder="Digite seu CPF"
-                      defaultValue="123.456.789-00"
-                      readOnly
-                      className="flex-1 outline-0 text-pink4000 opacity-25 cursor-not-allowed"
-                    />
-                  </InputRoot>
-                </div>
 
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="block text-sm font-medium text-pink2000 mb-1"
-                  >
-                    Email
-                  </label>
-                  <InputRoot className="group bg-pink1000 h-10 border border-pink2000 rounded-sm px-4 flex items-center gap-2 focus-within:border-pink4000 data-[error=true]:border-red-700">
-                    <InputIcon>
-                      <Mail />
-                    </InputIcon>
-                    <InputField
-                      id="email"
-                      type="email"
-                      placeholder="Digite seu email"
-                      defaultValue="paulo@exemplo.com"
-                    />
-                  </InputRoot>
-                </div>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Nome */}
+                <label className="text-pink2000">Nome</label>
+                <InputRoot>
+                  <InputIcon>
+                    <User />
+                  </InputIcon>
+                  <InputField
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                    placeholder="Digite seu nome"
+                    required
+                  />
+                </InputRoot>
 
-                <div>
-                  <label
-                    htmlFor="password"
-                    className="block text-sm font-medium text-pink2000 mb-1"
-                  >
-                    Senha
-                  </label>
-                  <InputRoot className="group bg-pink1000 h-10 border border-pink2000 rounded-sm px-4 flex items-center gap-2 focus-within:border-pink4000 data-[error=true]:border-red-700">
-                    <InputIcon>
-                      <Lock />
-                    </InputIcon>
-                    <InputField
-                      id="senha"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Digite sua senha"
-                      defaultValue="paulo@exemplo.com"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="text-pink4000 hover:text-pink2000 transition cursor-pointer"
-                    >
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </InputRoot>
-                </div>
+                {/* CPF */}
+                <label className="text-pink2000">CPF</label>
+                <InputRoot>
+                  <InputIcon>
+                    <Fingerprint />
+                  </InputIcon>
+                  <InputField value={cpf} readOnly />
+                </InputRoot>
 
-                <div>
-                  <label
-                    htmlFor="confirmar-senha"
-                    className="block text-sm font-medium text-pink2000 mb-1"
+                {/* Email */}
+                <label className="text-pink2000">Email</label>
+                <InputRoot>
+                  <InputIcon>
+                    <Mail />
+                  </InputIcon>
+                  <InputField
+                    type="email"
+                    value={email}
+                    readOnly
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Digite seu email"
+                    required
+                  />
+                </InputRoot>
+
+                {/* Telefone */}
+                <label className="text-pink2000">Telefone</label>
+                <InputRoot>
+                  <InputIcon>
+                    <Phone />
+                  </InputIcon>
+
+                  <MaskedInputField
+                    mask="(00) 00000-0000"
+                    placeholder="Digite seu telefone"
+                    value={tel}
+                    onChange={(e) => setTel(e.target.value)}
+                    required
+                  />
+                </InputRoot>
+
+                {/* Senha */}
+                <label className="text-pink2000">Senha</label>
+                <InputRoot>
+                  <InputIcon>
+                    <Lock />
+                  </InputIcon>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={senha}
+                    onChange={(e) => setSenha(e.target.value)}
+                    placeholder="Digite sua senha"
+                    className="bg-transparent flex-1 outline-none text-pink4000"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="text-pink4000 hover:text-pink2000 transition"
                   >
-                    Confirmar Senha
-                  </label>
-                  <InputRoot className="group bg-pink1000 h-10 border border-pink2000 rounded-sm px-4 flex items-center gap-2 focus-within:border-pink4000 data-[error=true]:border-red-700">
-                    <InputIcon>
-                      <Lock />
-                    </InputIcon>
-                    <InputField
-                      id="confirmar-senha"
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      placeholder="Confirme sua senha"
-                      defaultValue="paulo@exemplo.com"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
-                      className="text-pink4000 hover:text-pink2000 transition cursor-pointer"
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff size={16} />
-                      ) : (
-                        <Eye size={16} />
-                      )}
-                    </button>
-                  </InputRoot>
-                </div>
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </InputRoot>
+
+                {/* Confirmar Senha */}
+                <label className="text-pink2000">Confirmar Senha</label>
+                <InputRoot>
+                  <InputIcon>
+                    <Lock />
+                  </InputIcon>
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmarSenha}
+                    onChange={(e) => setConfirmarSenha(e.target.value)}
+                    placeholder="Confirme sua senha"
+                    className="bg-transparent flex-1 outline-none text-pink4000"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="text-pink4000 hover:text-pink2000 transition"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff size={16} />
+                    ) : (
+                      <Eye size={16} />
+                    )}
+                  </button>
+                </InputRoot>
 
                 <Button
                   type="submit"
-                  className="group flex justify-between items-center mt-8 px-5 h-12 bg-pink2000 text-pink100 font-semibold rounded-xl w-full cursor-pointer transition-colors duration-300 hover:bg-pink3000 hover:text-pink4000"
+                  className=" cursor-pointer mt-6 bg-pink2000 text-pink100 rounded-xl w-full py-3 font-semibold hover:bg-pink3000 hover:text-pink4000 transition"
                 >
-                  <span className="mx-auto">Confirmar Alterações</span>
+                  Confirmar Alterações
                 </Button>
               </form>
             </div>
@@ -203,5 +317,5 @@ export default function EditarPerfil() {
         </div>
       </div>
     </div>
-  )
+  );
 }

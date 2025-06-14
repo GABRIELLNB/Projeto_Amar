@@ -38,20 +38,23 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 # Serializer para o modelo Usuario, incluindo a lógica para
 # criação do usuário com senha hashada (não salva senha em texto puro).
 class UsuarioSerializer(serializers.ModelSerializer):
-    senha = serializers.CharField(write_only=True)
+    senha = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = Usuario
         fields = ['email', 'nome', 'cpf', 'telefone', 'senha', 'foto_perfil']
+        read_only_fields = ['email', 'cpf']  # CPF e email não editáveis
 
-    def create(self, validated_data):
-        senha = validated_data.pop('senha')
-        usuario = Usuario(**validated_data)
-        usuario.set_password(senha)  # usa o setter para hash
-        usuario.save()
-        return usuario
-
-
+    def update(self, instance, validated_data):
+        senha = validated_data.pop('senha', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        if senha:
+            instance.set_password(senha)
+        instance.save()
+        return instance
+    
+    
 # Serializer para o modelo Disponibilidade, que expõe a disponibilidade
 # dos atendentes (profissionais ou estagiários), incluindo nome, tipo,
 # serviço e detalhes do horário e local.

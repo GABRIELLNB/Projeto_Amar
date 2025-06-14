@@ -3,6 +3,7 @@ import '@/app/globals.css'
 import type { Metadata } from 'next'
 import { Montserrat, Oxanium } from 'next/font/google'
 import { BodyWrapper } from '@/components/client'
+import { UserProvider } from "@/contexts/userContext";
 
 export const metadata: Metadata = {
   title: 'A.M.A.R',
@@ -35,9 +36,14 @@ export default function RootLayout({
         <link rel="icon" type="image/svg+xml" href="/favicon2/favicon.svg" />
       </head>
 
-      <BodyWrapper>
-        <main className="px-5 py-8 md:py-0">{children}</main>
-      </BodyWrapper>
+      <body>
+        <UserProvider>
+          <BodyWrapper>
+            <main className="px-5 py-8 md:py-0">{children}</main>
+          </BodyWrapper>
+        </UserProvider>
+      </body>
+      
     </html>
   )
 }

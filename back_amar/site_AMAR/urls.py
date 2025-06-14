@@ -7,6 +7,7 @@ from .views import (
     CurtirForumAPIView,
     DescurtirForumAPIView,
     DisponibilidadesPorDataView,
+    EditarPerfilView,
     ForumDetailAPIView,
     ForumsAPIView,
     MensagemForumAPIView,
@@ -63,7 +64,7 @@ urlpatterns = [
     path('api/mensagem-forum/<int:pk>/', MensagemForumDetailAPIView.as_view(), name='mensagem-forum-detail'),
     path('api/mensagem-forum/forum/<int:forum_id>/', MensagemForumListAPIView.as_view(), name='mensagem-forum-list'),
 
-    
+     path('api/usuario/perfil/', EditarPerfilView.as_view(), name='editar-perfil'),
     #path('api/Login/', LoginView.as_view(), name='Login'),
     #path('api/Menu/', MenuView.as_view(), name='Menu'),
     #path('api/Editar Perfil',EditarPerfilView.as_view(), name='Editar Perfil'),

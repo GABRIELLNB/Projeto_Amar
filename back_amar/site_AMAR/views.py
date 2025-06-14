@@ -759,6 +759,44 @@ class MensagemForumListAPIView(generics.ListAPIView):
     def get_queryset(self):
         forum_id = self.kwargs['forum_id']
         return MensagemForum.objects.filter(forum=forum_id).order_by('data_envio')
+
+
+
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+
+class EditarPerfilView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = UsuarioSerializer(request.user)
+        return Response(serializer.data)
+
+    def patch(self, request):
+        serializer = UsuarioSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request):
+        serializer = UsuarioSerializer(request.user, data=request.data, partial=True)  # partial=True permite edição parcial
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
 '''
 class MenuView(APIView):
     permission_classes = [IsAuthenticated]
