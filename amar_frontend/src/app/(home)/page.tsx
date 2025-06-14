@@ -1,26 +1,27 @@
-'use client'
+"use client";
 
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useRouter } from 'next/navigation'
-import Image from 'next/image'
-import { Mail, Lock } from 'lucide-react'
-import { Button } from '@/components/button'
-import { InputField, InputIcon, InputRoot } from '@/components/input'
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Button } from "@/components/button";
+import { InputField, InputIcon, InputRoot } from "@/components/input";
+import { useState } from "react";
 
 // Schema de validação com Zod
 const loginSchema = z.object({
-  email: z.string().email('Digite um e-mail válido'),
-  senha: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
-})
+  email: z.string().email("Digite um e-mail válido"),
+  senha: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
+});
 
-type LoginSchema = z.infer<typeof loginSchema>
+type LoginSchema = z.infer<typeof loginSchema>;
 
 export default function Home() {
-  const router = useRouter()
-
-  
+  const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const {
     register,
@@ -28,44 +29,44 @@ export default function Home() {
     formState: { errors },
   } = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
-  })
+  });
 
-async function onLogin(data: LoginSchema) {
-  try {
-    const response = await fetch('http://localhost:8000/api/token/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: data.email,
-        password: data.senha,
-      }),
-    })
+  async function onLogin(data: LoginSchema) {
+    try {
+      const response = await fetch("http://localhost:8000/api/token/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.senha,
+        }),
+      });
 
-    if (!response.ok) throw new Error('Erro no login')
+      if (!response.ok) throw new Error("Erro no login");
 
-    const json = await response.json()
-    console.log("Resposta do backend:", json);
+      const json = await response.json();
+      console.log("Resposta do backend:", json);
 
-    localStorage.setItem('token', json.access)
-    localStorage.setItem('user_type', json.user_type); // Salva tipo de usuário
-    localStorage.setItem('user_name', json.name); // Salva nome, se disponível
-    localStorage.setItem('usuario_id', json.id);
+      localStorage.setItem("token", json.access);
+      localStorage.setItem("user_type", json.user_type); // Salva tipo de usuário
+      localStorage.setItem("user_name", json.name); // Salva nome, se disponível
+      localStorage.setItem("usuario_id", json.id);
 
-    
-
-    if (json.is_superuser) {
-      router.push('/menu-adm')
-    } else if (json.user_type === 'profissional' || json.user_type === 'estagiario') {
-      router.push('/menu')
-    } else {
-      router.push('/menu')
+      if (json.is_superuser) {
+        router.push("/menu-adm");
+      } else if (
+        json.user_type === "profissional" ||
+        json.user_type === "estagiario"
+      ) {
+        router.push("/menu");
+      } else {
+        router.push("/menu");
+      }
+    } catch (error) {
+      console.error("Falha no login:", error);
+      alert("Usuário ou senha inválidos");
     }
-  } catch (error) {
-    console.error('Falha no login:', error)
-    alert('Usuário ou senha inválidos')
   }
-}
-
 
   return (
     <div className="min-h-dvh w-full flex items-center justify-center gap-16 flex-col md:flex-row">
@@ -100,13 +101,11 @@ async function onLogin(data: LoginSchema) {
                 <InputField
                   type="email"
                   placeholder="E-mail"
-                  {...register('email')}
+                  {...register("email")}
                 />
               </InputRoot>
               {errors.email && (
-                <p className="text-red text-xs">
-                  {errors.email.message}
-                </p>
+                <p className="text-red text-xs">{errors.email.message}</p>
               )}
             </div>
 
@@ -117,25 +116,27 @@ async function onLogin(data: LoginSchema) {
                   <Lock />
                 </InputIcon>
                 <InputField
-                  type="password"
+                  type={showConfirmPassword ? "text" : "password"}
                   placeholder="Senha"
-                  {...register('senha')}
+                  {...register("senha")}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="text-pink4000 hover:text-pink2000 transition"
+                >
+                  {showConfirmPassword ? (
+                    <Eye size={16} />
+                  ) : (
+                    <EyeOff size={16} />
+                  )}
+                </button>
               </InputRoot>
               {errors.senha && (
-                <p className="text-red text-xs">
-                  {errors.senha.message}
-                </p>
+                <p className="text-red text-xs">{errors.senha.message}</p>
               )}
             </div>
           </div>
-
-          <Button
-            type="button"
-            className="relative text-blue1000 text-sm font-medium hover:underline underline-offset-4 decoration-blue-400/50 hover:decoration-blue1000 transition-colors duration-300 cursor-pointer text-[12px]"
-          >
-            Esqueceu sua senha?
-          </Button>
 
           <br />
 
@@ -147,7 +148,7 @@ async function onLogin(data: LoginSchema) {
             <span className="text-pink2000">Precisando de uma conta?</span>
             <Button
               type="button"
-              onClick={() => router.replace('/cadastro')}
+              onClick={() => router.replace("/cadastro")}
               className="ml-1 text-blue1000 text-sm hover:underline transition-colors duration-300 cursor-pointer text-[13px]"
             >
               Registre-se
@@ -156,5 +157,5 @@ async function onLogin(data: LoginSchema) {
         </form>
       </div>
     </div>
-  )
+  );
 }

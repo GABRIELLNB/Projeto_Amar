@@ -312,34 +312,62 @@ export default function Configuracoes() {
                 Termos e Permissões
               </h2>
 
-              <h3 className="mb-2 text-pink2000">Termos?</h3>
+              <h3 className="mb-2 text-pink2000">Termos de Uso e Permissões da Plataforma A.M.A.R.</h3>
               <div className="flex items-center justify-between mb-2">
                 <div className="overflow-y-auto max-h-[140px] px-2 text-justify text-pink4000 text-sm">
-                  A.M.A.R. é uma plataforma inclusiva e acolhedora, que foi
-                  criada especialmente para oferecer apoio e promover as
-                  conexões dentro da comunidade LGBTQIAPN+. Mais do que um
-                  simples espaço online, a plataforma representa um ambiente
-                  seguro e cheio de possibilidades, onde você vai poder
-                  compartilhar experiências, buscar ajuda e encontrar
-                  profissionais especializados para lidar com questões
-                  essenciais da vida. Vai ser possível também participar de um
-                  fórum aberto e colaborativo, onde vai te permitir a
-                  possibilidade de trocar histórias, desabafos, conquistas e
-                  aprendizados, fortalecendo o sentimento de pertencimento e
-                  união. Além disso, a plataforma vai permitir interações mais
-                  direcionadas e um suporte ainda mais eficaz para cada
-                  necessidade. Outro recurso essencial é a funcionalidade de
-                  agendamento de serviços, que torna possível marcar consultas
-                  com psicólogos, médicos e estagiários parceiros com total
-                  conveniência. E para garantir uma experiência completa, a
-                  A.M.A.R vai te oferecer o acompanhamento de todos os
-                  agendamentos, enviando lembretes e notificações que ajudam a
-                  manter o controle das consultas e facilitam o planejamento de
-                  novos atendimentos, conforme a necessidade de cada pessoa. Com
-                  um compromisso cuidado, a plataforma também disponibiliza
-                  consultoria online com profissionais especializados em
-                  diversas áreas que vão te proporcionar orientações práticas e
-                  acessíveis para a comunidade.
+                  1. Aceitação dos Termos
+Ao acessar ou utilizar a plataforma A.M.A.R., você concorda com os presentes Termos de Uso e Permissões. Caso não concorde com qualquer parte destes termos, recomendamos que não utilize a plataforma.
+<br /><br />
+2. Objetivo da Plataforma
+A.M.A.R. é uma plataforma online voltada ao acolhimento, apoio e promoção de conexões dentro da comunidade LGBTQIAPN+. A plataforma disponibiliza fóruns, agendamento de serviços com profissionais especializados, grupos temáticos de apoio e consultoria online.
+<br /><br />
+3. Cadastro e Responsabilidades do Usuário
+Para utilizar determinadas funcionalidades, o usuário deve se cadastrar, fornecendo informações verdadeiras e atualizadas.
+
+É proibido criar perfis falsos, utilizar dados de terceiros ou fazer-se passar por outra pessoa.
+
+O usuário é responsável por manter a confidencialidade de seu login e senha.
+<br /><br />
+4. Conduta no Uso da Plataforma
+Ao utilizar a A.M.A.R., o usuário se compromete a:
+
+Respeitar os demais membros da comunidade, mantendo um ambiente acolhedor e inclusivo.
+
+Não publicar conteúdos ofensivos, discriminatórios, violentos, pornográficos ou ilegais.
+
+Utilizar os serviços da plataforma de forma ética e respeitosa, principalmente ao interagir com profissionais e outros usuários.
+
+A plataforma reserva-se o direito de remover conteúdos e suspender ou excluir contas que violem essas diretrizes.
+<br /><br />
+5. Uso dos Fóruns e Grupos de Apoio
+Os fóruns são espaços colaborativos e públicos dentro da comunidade da plataforma.
+
+Informações pessoais compartilhadas por outros usuários devem ser respeitadas e não podem ser utilizadas fora do contexto da plataforma.
+
+A.M.A.R. não se responsabiliza por informações ou conselhos postados por usuários nos fóruns.
+<br /><br />
+6. Agendamento e Serviços Profissionais
+Os serviços disponibilizados por psicólogos, médicos e advogados parceiros são realizados de forma autônoma, não sendo a A.M.A.R. responsável direta pelo atendimento prestado.
+
+O usuário deve respeitar os horários agendados e comunicar previamente em caso de cancelamento.
+
+Os profissionais devem manter o sigilo e a ética profissional conforme seus respectivos conselhos de classe.
+<br /><br />
+7. Consultorias Online
+As consultorias são oferecidas com caráter informativo e orientativo, não substituindo diagnósticos ou tratamentos presenciais quando necessários.
+
+A.M.A.R. poderá, a seu critério, gravar atendimentos (com aviso prévio) para fins de controle de qualidade, sempre respeitando o sigilo das informações pessoais.
+<br /><br />
+8. Privacidade e Proteção de Dados
+A.M.A.R. se compromete a proteger os dados pessoais dos usuários, conforme as diretrizes da Lei Geral de Proteção de Dados (LGPD).
+
+As informações coletadas são utilizadas exclusivamente para melhorar a experiência da plataforma e garantir a prestação adequada dos serviços.
+<br /><br />
+9. Propriedade Intelectual
+Todos os conteúdos disponibilizados na plataforma (textos, design, marca, software) são de propriedade da A.M.A.R. ou de seus parceiros, sendo proibida a reprodução sem autorização prévia.
+<br /><br />
+10. Alterações nos Termos
+A plataforma poderá alterar estes Termos de Uso a qualquer momento. É responsabilidade do usuário revisar os termos periodicamente. O uso contínuo da plataforma após alterações será considerado como aceitação das mudanças.
                 </div>
               </div>
 

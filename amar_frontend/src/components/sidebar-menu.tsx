@@ -16,19 +16,16 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useRef, useState, useEffect, useCallback } from "react";
+import { useUser } from "@/contexts/userContext"; // ajuste o caminho conforme sua estrutura
 
 interface SidebarMenuProps {
-  userName: string;
   activeItem: string;
   userType: "profissional" | "estagiario" | "outro";
-  userImage?: string | null;
 }
 
 export default function SidebarMenu({
-  userName,
   activeItem: propActiveItem,
   userType,
-  userImage,
 }: SidebarMenuProps) {
   const [activeSidebarItem, setActiveSidebarItem] = useState<string>(
     propActiveItem || "Menu"
@@ -39,6 +36,9 @@ export default function SidebarMenu({
 
   const minWidth = 300;
   const maxWidth = 400;
+
+  const { userName, userImage } = useUser(); // ← aqui está a mágica
+  const [modalAberto, setModalAberto] = useState(false);
 
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     if (typeof window !== "undefined") {
@@ -116,48 +116,48 @@ export default function SidebarMenu({
     return `${dia}-${mes}-${ano}`;
   };
 
-const [enviando, setEnviando] = useState(false);
+  const [enviando, setEnviando] = useState(false);
 
-const criarForum = async (e?: React.FormEvent) => {
-  if (e) e.preventDefault();
-  if (enviando) return; // bloqueia se já estiver enviando
+  const criarForum = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (enviando) return; // bloqueia se já estiver enviando
 
-  setEnviando(true);
-  setNovoTitulo("");  // Limpa o input na hora do clique
-  try {
-    const dataCriacao = formatarDataSimples(new Date());
-    const responseCriacao = await fetch("http://localhost:8000/api/forum/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        nome: novoTitulo,
-        publicacao: dataCriacao,
-      }),
-    });
-
-    if (responseCriacao.ok) {
-      const novoForum = await responseCriacao.json();
-      console.log("Fórum criado com sucesso:", novoForum);
-
-      const responseLista = await fetch("http://localhost:8000/api/forum/", {
-        headers: { Authorization: `Bearer ${token}` },
+    setEnviando(true);
+    setNovoTitulo(""); // Limpa o input na hora do clique
+    try {
+      const dataCriacao = formatarDataSimples(new Date());
+      const responseCriacao = await fetch("http://localhost:8000/api/forum/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          nome: novoTitulo,
+          publicacao: dataCriacao,
+        }),
       });
-      const listaAtualizada = await responseLista.json();
-      setForuns(listaAtualizada);
-      setNovoTitulo("");
-    } else {
-      const erro = await responseCriacao.json();
-      console.error("Erro ao criar fórum:", erro);
+
+      if (responseCriacao.ok) {
+        const novoForum = await responseCriacao.json();
+        console.log("Fórum criado com sucesso:", novoForum);
+
+        const responseLista = await fetch("http://localhost:8000/api/forum/", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const listaAtualizada = await responseLista.json();
+        setForuns(listaAtualizada);
+        setNovoTitulo("");
+      } else {
+        const erro = await responseCriacao.json();
+        console.error("Erro ao criar fórum:", erro);
+      }
+    } catch (error) {
+      console.error("Erro ao conectar com o servidor:", error);
+    } finally {
+      setEnviando(false);
     }
-  } catch (error) {
-    console.error("Erro ao conectar com o servidor:", error);
-  } finally {
-    setEnviando(false);
-  }
-};
+  };
   return (
     <>
       <div
@@ -170,20 +170,33 @@ const criarForum = async (e?: React.FormEvent) => {
 
         {/* Conteúdo principal */}
         <div className="flex-grow overflow-auto">
-<div className="flex justify-center mt-10">
-<IconButton className="w-50 h-50 rounded-full bg-pink1000 text-pink4000 hover:text-pink4000 flex items-center justify-center transition-colors duration-300 overflow-hidden">
-    {userImage ? (
-      <img
-        src={userImage}
-        alt="Foto do usuário"
-        className="object-cover w-full h-full rounded-full"
-      />
-    ) : (
-      <User className="w-30 h-30" />
-    )}
-  </IconButton>
-</div>
-
+          <div className="flex justify-center mt-10">
+            <IconButton className="w-50 h-50 rounded-full bg-pink1000 text-pink4000 hover:text-pink4000 flex items-center justify-center transition-colors duration-300 overflow-hidden">
+              {userImage ? (
+                <img
+                  src={userImage}
+                  alt="Foto do usuário"
+                  className="object-cover w-full h-full rounded-full cursor-pointer"
+                  onClick={() => setModalAberto(true)}
+                />
+              ) : (
+                <User className="w-30 h-30" />
+              )}
+            </IconButton>
+          </div>
+          {modalAberto && (
+            <div
+              onClick={() => setModalAberto(false)}
+              className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 cursor-pointer"
+            >
+              <img
+                src={userImage!}
+                alt="Imagem ampliada"
+                className="max-w-[90vw] max-h-[90vh] rounded-full shadow-lg"
+                onClick={(e) => e.stopPropagation()} // para evitar fechar ao clicar na imagem
+              />
+            </div>
+          )}
           <div className="flex justify-center mb-6">
             <h1 className="text-4xl font-bold text-pink4000">{userName}</h1>
           </div>
@@ -214,7 +227,6 @@ const criarForum = async (e?: React.FormEvent) => {
           ))}
         </div>
 
-       
         {/* Rodapé com campos de título e descrição para criar fórum */}
         <div className="flex items-center p-4 border-t border-pink2000 rounded-tr-2xl bg-pink2000 gap-2">
           <InputRoot className="flex-20 bg-pink3000 h-10 border border-pink2000 rounded-xl px-4 flex items-center gap-2 focus-within:border-pink4000">
@@ -230,7 +242,11 @@ const criarForum = async (e?: React.FormEvent) => {
             onClick={criarForum}
             disabled={enviando}
             className={`ml-2 p-2 rounded-2xl transition-colors duration-300
-              ${enviando ? "bg-pink2000 text-pink500 cursor-not-allowed" : "bg-pink4000 text-pink1000 hover:bg-pink1000 hover:text-pink4000"}`}
+              ${
+                enviando
+                  ? "bg-pink2000 text-pink500 cursor-not-allowed"
+                  : "bg-pink4000 text-pink1000 hover:bg-pink1000 hover:text-pink4000"
+              }`}
           >
             <Send className="w-5 h-5 cursor-pointer" />
           </Button>

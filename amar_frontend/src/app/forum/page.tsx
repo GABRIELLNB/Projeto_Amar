@@ -8,7 +8,7 @@ import { IconButton } from "@/components/icon-button";
 import { InputField, InputRoot } from "@/components/input";
 import { ArrowLeft, CircleX, Send } from "lucide-react";
 import Image from "next/image";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 
 type ForumsDisponiveis = {
@@ -42,7 +42,14 @@ type Mensagem = {
 
 export default function Forum() {
   const params = useParams();
-  const forumId = params.forumId ? Number(params.forumId) : null;
+  const forumIdParam = params.forumId ? Number(params.forumId) : null;
+
+  const searchParams = useSearchParams();
+  const forumIdQuery = searchParams.get("id") ? Number(searchParams.get("id")) : null;
+
+// Use apenas uma dessas para controlar o fórum selecionado, ou combine a lógica conforme seu app
+const forumId = forumIdParam ?? forumIdQuery;
+  
   const router = useRouter();
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -51,6 +58,7 @@ export default function Forum() {
   const isResizing = useRef(false);
   const minWidth = 300;
   const maxWidth = 400;
+
 
   const startResizing = () => {
     isResizing.current = true;
@@ -165,9 +173,21 @@ export default function Forum() {
           quantidade: forum.total_curtidas,
         };
       }
+      console.log("Estado inicial das curtidas:", estadoInicial); // 👈
       setCurtidasState(estadoInicial);
     }
   }, [foruns]);
+
+  useEffect(() => {
+  if (!forumId || foruns.length === 0) {
+    setSelectedForum(null);
+    return;
+  }
+
+  const idNum = Number(forumId);
+  const forumSelecionado = foruns.find((f) => f.id === idNum) ?? null;
+  setSelectedForum(forumSelecionado);
+}, [forumId, foruns]);
 
   const formatarDataSimples = (date: Date) => {
     const dia = String(date.getDate()).padStart(2, "0");
@@ -176,49 +196,48 @@ export default function Forum() {
     return `${dia}-${mes}-${ano}`;
   };
 
-const [enviando, setEnviando] = useState(false);
+  const [enviando, setEnviando] = useState(false);
 
-const criarForum = async (e?: React.FormEvent) => {
-  if (e) e.preventDefault();
-  if (enviando) return; // bloqueia se já estiver enviando
+  const criarForum = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (enviando) return; // bloqueia se já estiver enviando
 
-  setEnviando(true);
-  setNovoTitulo("");  // Limpa o input na hora do clique
-  try {
-    const dataCriacao = formatarDataSimples(new Date());
-    const responseCriacao = await fetch("http://localhost:8000/api/forum/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        nome: novoTitulo,
-        publicacao: dataCriacao,
-      }),
-    });
-
-    if (responseCriacao.ok) {
-      const novoForum = await responseCriacao.json();
-      console.log("Fórum criado com sucesso:", novoForum);
-
-      const responseLista = await fetch("http://localhost:8000/api/forum/", {
-        headers: { Authorization: `Bearer ${token}` },
+    setEnviando(true);
+    setNovoTitulo(""); // Limpa o input na hora do clique
+    try {
+      const dataCriacao = formatarDataSimples(new Date());
+      const responseCriacao = await fetch("http://localhost:8000/api/forum/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          nome: novoTitulo,
+          publicacao: dataCriacao,
+        }),
       });
-      const listaAtualizada = await responseLista.json();
-      setForuns(listaAtualizada);
-      setNovoTitulo("");
-    } else {
-      const erro = await responseCriacao.json();
-      console.error("Erro ao criar fórum:", erro);
-    }
-  } catch (error) {
-    console.error("Erro ao conectar com o servidor:", error);
-  } finally {
-    setEnviando(false);
-  }
-};
 
+      if (responseCriacao.ok) {
+        const novoForum = await responseCriacao.json();
+        console.log("Fórum criado com sucesso:", novoForum);
+
+        const responseLista = await fetch("http://localhost:8000/api/forum/", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const listaAtualizada = await responseLista.json();
+        setForuns(listaAtualizada);
+        setNovoTitulo("");
+      } else {
+        const erro = await responseCriacao.json();
+        console.error("Erro ao criar fórum:", erro);
+      }
+    } catch (error) {
+      console.error("Erro ao conectar com o servidor:", error);
+    } finally {
+      setEnviando(false);
+    }
+  };
 
   const excluirForum = async (forumId: number) => {
     try {
@@ -319,20 +338,30 @@ const criarForum = async (e?: React.FormEvent) => {
                     onClick={() => setSelectedForum(forum)}
                     className="relative group rounded-br-none flex justify-between cursor-pointer rounded-2xl border border-pink1000 items-start px-6 pt-4 pb-8 bg-pink1000 text-pink2000 font-semibold w-full"
                   >
-                    <span className="text-left">
-                      <div className="absolute top-1 left-6 scale-75 text-pink4000 mb-4">
+                    <div
+                      className="text-left max-w-[200px] break-words w-full"
+                      style={{
+                        maxWidth: "200px",
+                        wordBreak: "break-word",
+                        overflowWrap: "break-word",
+                      }}
+                    >
+                      <div className="text-pink4000 mb-2 text-sm">
                         {forum.criador.nome}
                       </div>
-                      <strong className="block mt-2">{forum.nome}</strong>{" "}
-                      <br />
-                      <div className="absolute bottom-[-4] left-0 scale-55 mb-1 text-pink4000">
+
+                      <strong className="block mt-1 break-all w-full">
+                        {forum.nome}
+                      </strong>
+
+                      <div className="text-pink4000 mt-2 text-xs break-words">
                         {forum.publicacao}
                       </div>
-                    </span>
+                    </div>
 
                     <div className="absolute bottom-0 right-1 scale-70">
                       <BotaoGostei
-                        // <- força o React a reconstruir o componente se `forumId` mudar
+                        key={forum.id} // 👈 importante!
                         forumId={forum.id}
                         inicialmenteGostei={
                           curtidasState[forum.id]?.gostei ?? false
@@ -389,7 +418,7 @@ const criarForum = async (e?: React.FormEvent) => {
                     </IconButton>
                     <div className="absolute bottom-0 right-1 scale-70">
                       <BotaoGostei
-                        // <- força o React a reconstruir o componente se `forumId` mudar
+                        key={forum.id} // 👈 importante!
                         forumId={forum.id}
                         inicialmenteGostei={
                           curtidasState[forum.id]?.gostei ?? false
@@ -416,26 +445,29 @@ const criarForum = async (e?: React.FormEvent) => {
         </div>
         {/* Rodapé com campos de título e descrição para criar fórum */}
 
-<div className="flex items-center p-4 border-t border-pink2000 rounded-tr-2xl bg-pink2000 gap-2">
-  <InputRoot className="flex-20 bg-pink3000 h-10 border border-pink2000 rounded-xl px-4 flex items-center gap-2 focus-within:border-pink4000">
-    <InputField
-      placeholder="Nome do fórum"
-      value={novoTitulo}
-      onChange={(e) => setNovoTitulo(e.target.value)}
-    />
-  </InputRoot>
+        <div className="flex items-center p-3 border-t border-pink2000 rounded-tr-2xl bg-pink2000 gap-2">
+          <InputRoot className="flex-20 bg-pink3000 h-10 border border-pink2000 rounded-xl px-4 flex items-center gap-2 focus-within:border-pink4000">
+            <InputField
+              placeholder="Nome do fórum"
+              value={novoTitulo}
+              onChange={(e) => setNovoTitulo(e.target.value)}
+            />
+          </InputRoot>
 
-<Button
-  type="submit"
-  onClick={criarForum}
-  disabled={enviando}
-  className={`ml-2 p-2 rounded-2xl transition-colors duration-300
-    ${enviando ? "bg-pink2000 text-pink500 cursor-not-allowed" : "bg-pink4000 text-pink1000 hover:bg-pink1000 hover:text-pink4000"}`}
->
-  <Send className="w-5 h-5 cursor-pointer" />
-</Button>
-</div>
-       
+          <Button
+            type="submit"
+            onClick={criarForum}
+            disabled={enviando}
+            className={`ml-2 p-2 rounded-2xl transition-colors duration-300
+    ${
+      enviando
+        ? "bg-pink2000 text-pink500 cursor-not-allowed"
+        : "bg-pink4000 text-pink1000 hover:bg-pink1000 hover:text-pink4000"
+    }`}
+          >
+            <Send className="w-5 h-5 cursor-pointer" />
+          </Button>
+        </div>
       </div>
 
       {/* Drag da sidebar */}
@@ -565,58 +597,63 @@ const criarForum = async (e?: React.FormEvent) => {
           </p>
         )}
       </div>
+{excluirModal && forumParaExcluir && (
+  <>
+    {/* backdrop */}
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => setExcluirModal(false)} // clicar aqui fecha
+      onKeyDown={(e) =>
+        (e.key === "Enter" || e.key === " ") && setExcluirModal(false)
+      }
+      className="fixed inset-0 z-40 backdrop-blur-sm"
+    />
 
-      {excluirModal && forumParaExcluir && (
-        <>
-          {/* backdrop */}
-          <div
-            role="button"
-            tabIndex={0}
+    {/* modal centralizado com flex */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="relative bg-pink1000 rounded-2xl shadow-lg p-6 h-auto max-h-[80vh] max-w-[90vw] border border-pink4000"
+        onClick={(e) => e.stopPropagation()} // IMPORTANTE: previne o fechamento ao clicar dentro
+      >
+        {/* botão voltar - dentro da modal */}
+        <div className="absolute top-4 left-4">
+          <IconButton
             onClick={() => setExcluirModal(false)}
-            onKeyDown={(e) =>
-              (e.key === "Enter" || e.key === " ") && setExcluirModal(false)
-            }
-            className="fixed inset-0 z-40 backdrop-blur-sm"
-          />
+            className="p-1.5 bg-pink1000 text-pink4000 rounded-md cursor-pointer transition-colors duration-300 hover:text-pink2000"
+          >
+            <ArrowLeft />
+          </IconButton>
+        </div>
 
-          {/* modal */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50">
-            <div className="bg-pink1000 rounded-2xl shadow-lg p-6 w-[90vw] max-w-sm h-[200px] border border-pink4000">
-              {/* botão voltar */}
-              <div className="absolute top-4 left-1">
-                <IconButton
-                  onClick={() => setExcluirModal(false)}
-                  className="p-1.5 bg-pink1000 text-pink4000 rounded-md cursor-pointer transition-colors duration-300 hover:text-pink2000"
-                >
-                  <ArrowLeft />
-                </IconButton>
-              </div>
+        {/* faixa superior dentro da modal */}
+        <div className="bg-pink2000 w-full h-4 absolute top-0 left-0 rounded-t-2xl border border-pink2000" />
 
-              {/* faixa superior */}
-              <div className="bg-pink2000 w-full h-4 absolute top-0 left-0 rounded-t-2xl border border-pink4000" />
+        {/* título */}
+        <h2 className="text-xl font-bold mb-5 text-pink4000 text-center">
+          Excluir Fórum
+        </h2>
 
-              {/* título */}
-              <h2 className="text-xl font-bold mb-5 text-pink4000 text-center">
-                Excluir Fórum
-              </h2>
+        {/* mensagem */}
+        <p className="text-pink4000 text-sm mb-8 text-center break-words max-w-full">
+          Tem certeza que deseja excluir&nbsp;
+          <strong>{forumParaExcluir.nome}</strong>?
+        </p>
 
-              {/* mensagem */}
-              <p className="text-pink4000 text-sm mb-8 text-center">
-                Tem certeza que deseja excluir&nbsp;
-                <strong>{forumParaExcluir.nome}</strong>?
-              </p>
+        {/* botão confirmar */}
+        <Button
+          onClick={() => excluirForum(forumParaExcluir.id)}
+          className="bg-red text-pink1000 border border-red px-4 py-2 rounded-xl w-full transition-colors duration-300 hover:bg-pink3000 hover:text-red cursor-pointer"
+        >
+          Excluir fórum
+        </Button>
+      </div>
+    </div>
+  </>
+)}
 
-              {/* botão confirmar */}
-              <Button
-                onClick={() => excluirForum(forumParaExcluir.id)}
-                className="bg-red text-pink1000 border border-red px-4 py-2 rounded-xl w-full transition-colors duration-300 hover:bg-pink3000 hover:text-red cursor-pointer"
-              >
-                Excluir fórum
-              </Button>
-            </div>
-          </div>
-        </>
-      )}
+
+
     </>
   );
 }

@@ -76,11 +76,13 @@ export function ChatInput({
   return (
     <div className="border-t px-4 py-3 flex items-center gap-2 border border-pink1000 bg-pink1000 fixed bottom-0 left-[350px] right-0 z-50">
 <BotaoGostei
-        forumId={forumId}
-        inicialmenteGostei={inicialmenteGostei}
-        inicialmenteQuantidade={inicialmenteQuantidade}
-        onCurtirChange={onCurtirChange}
-      />
+  forumId={forumId}
+  inicialmenteGostei={inicialmenteGostei}
+  inicialmenteQuantidade={inicialmenteQuantidade}
+  onCurtirChange={onCurtirChange}
+/>
+
+      
 
       <div className="relative w-full">
         <InputRoot className="group bg-pink3000 h-12 border border-pink2000 w-full rounded-xl px-4 flex items-center gap-2 focus-within:border-pink4000 data-[error=true]:border-red-700">

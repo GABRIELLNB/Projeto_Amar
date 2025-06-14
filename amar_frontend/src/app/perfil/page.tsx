@@ -16,6 +16,8 @@ import {
   Phone,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useUser } from "@/contexts/userContext";
+
 
 export default function EditarPerfil() {
   const [showPassword, setShowPassword] = useState(false);
@@ -24,19 +26,20 @@ export default function EditarPerfil() {
   const [userType, setUserType] = useState<
     "profissional" | "estagiario" | "outro"
   >("outro");
-  const [userName, setUserName] = useState("");
 
+  const { setUserName, setUserImage } = useUser();
   const [nome, setNome] = useState("");
   const [cpf, setCpf] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
+  const [senhaMascara, setSenhaMascara] = useState<string | null>(null);
+
   const [tel, setTel] = useState(""); // Adicionado
   const [isClient, setIsClient] = useState(false);
   const [imagemPerfil, setImagemPerfil] = useState<string | null>(null);
   const inputFileRef = useRef<HTMLInputElement>(null);
   const [modalAberto, setModalAberto] = useState(false);
-  
 
   useEffect(() => {
     setIsClient(true);
@@ -63,11 +66,10 @@ export default function EditarPerfil() {
         setCpf(data.cpf || "");
         setEmail(data.email || "");
         setTel(data.telefone || "");
+        setSenhaMascara(data.senha_mascara || null); // <- aqui
       })
       .catch(() => alert("Erro ao carregar perfil"));
   }, []);
-
-  
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -103,9 +105,12 @@ export default function EditarPerfil() {
 
     if (response.ok) {
       alert("Perfil atualizado com sucesso!");
+      setUserName(nome);
       if (imagemPerfil) {
+        setUserImage(imagemPerfil);
         localStorage.setItem("imagem_perfil", imagemPerfil);
       }
+      localStorage.setItem("user_name", nome);
       setSenha("");
       setConfirmarSenha("");
     } else {
@@ -135,12 +140,7 @@ export default function EditarPerfil() {
   if (!isClient) return null;
   return (
     <div>
-      <SidebarMenu
-        userType={userType}
-        userName={nome}
-        activeItem="Editar Perfil"
-        userImage={imagemPerfil || null}
-      />
+      <SidebarMenu userType={userType} activeItem="Editar Perfil" />
 
       <div className="ml-[360px] p-6 relative">
         <div className="gap-6 mt-[-50] px-6">
@@ -150,22 +150,22 @@ export default function EditarPerfil() {
                 <div className="flex justify-center mt-0 ">
                   <div className="relative w-fit mx-auto">
                     <IconButton
-          onClick={() => {
-            if (imagemPerfil) setModalAberto(true);
-          }}
-          className="w-42 h-42 rounded-full bg-pink3000 text-pink4000 flex items-center justify-center overflow-hidden cursor-pointer"
-          aria-label="Visualizar imagem ampliada"
-        >
-          {imagemPerfil ? (
-            <img
-              src={imagemPerfil}
-              alt="Perfil"
-              className="object-cover w-full h-full rounded-full"
-            />
-          ) : (
-            <User className="w-20 h-20" />
-          )}
-        </IconButton>
+                      onClick={() => {
+                        if (imagemPerfil) setModalAberto(true);
+                      }}
+                      className="w-42 h-42 rounded-full bg-pink3000 text-pink4000 flex items-center justify-center overflow-hidden cursor-pointer"
+                      aria-label="Visualizar imagem ampliada"
+                    >
+                      {imagemPerfil ? (
+                        <img
+                          src={imagemPerfil}
+                          alt="Perfil"
+                          className="object-cover w-full h-full rounded-full"
+                        />
+                      ) : (
+                        <User className="w-20 h-20" />
+                      )}
+                    </IconButton>
                     <Button
                       onClick={() => inputFileRef.current?.click()}
                       className="absolute bottom-2 right-2 bg-pink4000 text-pink1000 p-1 rounded-full hover:bg-pink2000 hover:text-pink1000 transition cursor-pointer"
@@ -180,20 +180,19 @@ export default function EditarPerfil() {
                       className="hidden"
                     />
                   </div>
-                        {modalAberto && (
-        <div
-          onClick={() => setModalAberto(false)}
-          className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 cursor-pointer "
-        >
-          <img
-            src={imagemPerfil!}
-            alt="Imagem ampliada"
-            className="max-w-[90vw] max-h-[90vh] rounded-full shadow-lg"
-            onClick={(e) => e.stopPropagation()} // para evitar fechar ao clicar na imagem
-          />
-        </div>
-      )}
-
+                  {modalAberto && (
+                    <div
+                      onClick={() => setModalAberto(false)}
+                      className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 cursor-pointer "
+                    >
+                      <img
+                        src={imagemPerfil!}
+                        alt="Imagem ampliada"
+                        className="max-w-[90vw] max-h-[90vh] rounded-full shadow-lg"
+                        onClick={(e) => e.stopPropagation()} // para evitar fechar ao clicar na imagem
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-center mb-2">
@@ -257,7 +256,6 @@ export default function EditarPerfil() {
                   />
                 </InputRoot>
 
-                {/* Senha */}
                 <label className="text-pink2000">Senha</label>
                 <InputRoot>
                   <InputIcon>
@@ -275,7 +273,7 @@ export default function EditarPerfil() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="text-pink4000 hover:text-pink2000 transition"
                   >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
                   </button>
                 </InputRoot>
 
@@ -298,9 +296,9 @@ export default function EditarPerfil() {
                     className="text-pink4000 hover:text-pink2000 transition"
                   >
                     {showConfirmPassword ? (
-                      <EyeOff size={16} />
-                    ) : (
                       <Eye size={16} />
+                    ) : (
+                      <EyeOff size={16} />
                     )}
                   </button>
                 </InputRoot>

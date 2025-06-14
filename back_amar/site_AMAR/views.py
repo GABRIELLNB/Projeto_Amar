@@ -1,5 +1,7 @@
+from itertools import count
 import re
 from urllib import request
+from arrow import now
 from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
 from django.utils.dateparse import parse_date
@@ -10,6 +12,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from datetime import datetime
 from .models import Agendamento, ForumCurtida
+from django.db.models import Count
+
 #from .utils import get_tipo_usuario #PARA O MENU
 from .models import (
     Agendamento,
@@ -613,9 +617,10 @@ class ForumsAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        forums = Forums.objects.all()
+        forums = Forums.objects.all().prefetch_related('curtidas')
         serializer = ForumsSerializer(forums, many=True, context={'request': request})
         return Response(serializer.data)
+
 
     def post(self, request):
         serializer = ForumsSerializer(data=request.data, context={'request': request})  # 👈 adicionado context
@@ -669,6 +674,8 @@ class ForumDetailAPIView(APIView):
         forum.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+from django.db.models import Count
+
 class CurtirForumAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -680,10 +687,11 @@ class CurtirForumAPIView(APIView):
             return Response({'detail': 'Você já curtiu este fórum.'}, status=status.HTTP_400_BAD_REQUEST)
 
         ForumCurtida.objects.create(forum=forum, usuario=usuario)
+        total_curtidas = ForumCurtida.objects.filter(forum=forum).count()
 
         return Response({
             'detail': 'Curtida registrada com sucesso.',
-            'total_curtidas': forum.total_curtidas,
+            'total_curtidas': total_curtidas,
             'curtiu': True
         }, status=status.HTTP_201_CREATED)
 
@@ -700,12 +708,14 @@ class DescurtirForumAPIView(APIView):
             return Response({'detail': 'Você não curtiu este fórum.'}, status=status.HTTP_400_BAD_REQUEST)
 
         curtida.delete()
+        total_curtidas = ForumCurtida.objects.filter(forum=forum).count()
 
         return Response({
             'detail': 'Curtida removida com sucesso.',
-            'total_curtidas': forum.total_curtidas,
+            'total_curtidas': total_curtidas,
             'curtiu': False
         }, status=status.HTTP_200_OK)
+
         
 class MensagemForumAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -831,3 +841,118 @@ class MenuView(APIView):
 
         return Response(data, status=status.HTTP_200_OK)
 '''
+"""
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from django.utils import timezone
+from django.db.models import Count
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .models import Agendamento, Forums
+from .serializers import ForumsSerializer
+from datetime import date
+
+class MenuView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        # Tipo de usuário
+        if hasattr(user, 'profissional'):
+            user_type = 'profissional'
+        elif hasattr(user, 'estagiario'):
+            user_type = 'estagiario'
+        else:
+            user_type = 'usuario'
+
+        # Nome do usuário
+        nome_usuario = user.nome
+
+        # Fórum mais curtido
+        top_foruns = Forums.objects.all().order_by('-curtidas__count')[:4]  # top 4
+        forum_serializer = ForumsSerializer(top_foruns, many=True, context={"request": request})
+
+        # Próximo agendamento
+        proximo_agendamento = Agendamento.objects.filter(usuario=user, dia__gte=date.today()).order_by('dia', 'horario').first()
+        if proximo_agendamento:
+            agendamento_info = {
+                'dia': proximo_agendamento.dia.strftime('%d/%m/%Y'),
+                'horario': proximo_agendamento.horario if isinstance(proximo_agendamento.horario, str) else proximo_agendamento.horario.strftime('%H:%M'),
+                'atendente': proximo_agendamento.atendente.nome if proximo_agendamento.atendente else 'N/A',
+                'local': proximo_agendamento.local if proximo_agendamento.local else 'N/A',
+                'status': proximo_agendamento.status,
+            }
+        else:
+            agendamento_info = None
+
+        # Links e imagens (simulado fixo; você pode fazer dinâmico depois)
+        links_e_imagens = [
+            {
+                "link": "https://exemplo.com/artigo1",
+                "imagem": "https://via.placeholder.com/150",
+                "descricao": "Dicas para cuidar da saúde mental",
+            },
+            {
+                "link": "https://exemplo.com/artigo2",
+                "imagem": "https://via.placeholder.com/150",
+                "descricao": "Como lidar com a ansiedade",
+            }
+        ]
+
+        return Response({
+            "usuario": {"nome": nome_usuario},
+            "user_type": user_type,
+            "top_foruns": forum_serializer.data,
+            "proximo_agendamento": agendamento_info,
+            "links_e_imagens": links_e_imagens,
+        })
+"""
+from django.db.models import Count
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from django.utils.timezone import now
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def menu_data(request):
+    user = request.user
+
+    top_foruns = Forums.objects.annotate(total_curtidas_count=Count('curtidas')).order_by('-total_curtidas_count')[:5]
+
+    # Serializa os fóruns
+    top_foruns_serialized = ForumsSerializer(top_foruns, many=True, context={'request': request}).data
+
+    # Próximo agendamento confirmado e futuro para o usuário
+    proximo = Agendamento.objects.filter(
+        usuario=user,
+        status='confirmado',
+        dia__gte=now().date()
+    ).order_by('dia', 'horario').first()
+
+    proximo_serialized = AgendamentoSerializer(proximo).data if proximo else None
+
+
+    links_e_imagens = [
+    {
+        "titulo": "UNIJORGE",
+        "url": "https://www.unijorge.edu.br/",
+        "imagem": request.build_absolute_uri('/media/imagens/unijorge.png')
+    },
+    {
+        "titulo": "Núcleo AMADO",
+        "url": "https://www.unijorge.edu.br/nucleoamado/",
+        "imagem": request.build_absolute_uri('/media/imagens/amado.png')
+
+    },
+    ];
+    return Response({
+        "top_foruns": top_foruns_serialized,
+        "proximo_agendamento": proximo_serialized,
+        "links_e_imagens": links_e_imagens,
+    })

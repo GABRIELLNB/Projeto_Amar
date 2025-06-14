@@ -13,6 +13,7 @@ from .views import (
     MensagemForumAPIView,
     MensagemForumDetailAPIView,
     MensagemForumListAPIView,
+
     MinhasConsultasAPIView,
     PreCadastroFuncionarioView,
     UsuarioListView, UsuarioDetailView,
@@ -21,6 +22,7 @@ from .views import (
     AgendamentoListCreateView, AgendamentoDetailView,
     AgendamentosPorDataView,
     DisponibilidadesPorhorariosView,
+    menu_data,
 
 )
 from .views import MyTokenObtainPairView
@@ -65,6 +67,8 @@ urlpatterns = [
     path('api/mensagem-forum/forum/<int:forum_id>/', MensagemForumListAPIView.as_view(), name='mensagem-forum-list'),
 
      path('api/usuario/perfil/', EditarPerfilView.as_view(), name='editar-perfil'),
+     
+     path('api/menu/', menu_data),
     #path('api/Login/', LoginView.as_view(), name='Login'),
     #path('api/Menu/', MenuView.as_view(), name='Menu'),
     #path('api/Editar Perfil',EditarPerfilView.as_view(), name='Editar Perfil'),

@@ -218,10 +218,6 @@ class Forums(models.Model):
     def __str__(self):
         return self.nome
 
-    @property
-    def total_curtidas(self):
-        return self.curtidas.count()  # usa related_name da ForumCurtida
-
 
 class MensagemForum(models.Model):
     forum = models.ForeignKey(Forums, on_delete=models.CASCADE, null=False, related_name='mensagens')

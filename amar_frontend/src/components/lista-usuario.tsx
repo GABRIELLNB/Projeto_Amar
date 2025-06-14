@@ -185,17 +185,19 @@ function renderSection(
                     <p className="text-sm text-pink200">CPF: {item.cpf}</p>
                   </div>
                   <div className="flex gap-2">
-                    <Button
-                      className="bg-pink1000 text-pink2000 px-3 py-1 rounded-md shadow hover:bg-pink4000 hover:text-pink1000 transition-colors duration-300 cursor-pointer"
-                      onClick={() => {
-                        if (sectionKey === "profissionais")
-                          router.push(`/profissional-cadastro/${item.cpf}`);
-                        if (sectionKey === "estagiarios")
-                          router.push(`/estagiario-cadastro/${item.cpf}`);
-                      }}
-                    >
-                      Alterar
-                    </Button>
+                    {(sectionKey === "profissionais" || sectionKey === "estagiarios") && (
+  <Button
+    className="bg-pink1000 text-pink2000 px-3 py-1 rounded-md shadow hover:bg-pink4000 hover:text-pink1000 transition-colors duration-300 cursor-pointer"
+    onClick={() => {
+      if (sectionKey === "profissionais")
+        router.push(`/profissional-cadastro/${item.cpf}`);
+      if (sectionKey === "estagiarios")
+        router.push(`/estagiario-cadastro/${item.cpf}`);
+    }}
+  >
+    Alterar
+  </Button>
+)}
                     <IconButton
                       onClick={(e) =>
                         handleDeleteClick(e, item.id, sectionKey)
@@ -288,7 +290,7 @@ function renderSection(
           <div
             className="fixed inset-0 z-50 flex items-center justify-center"
             style={{
-              top: modalTop ? modalTop + window.scrollY - 50 : "10vh",
+              top: modalTop ? modalTop + window.scrollY - 250 : "10vh",
               position: "absolute",
             }}
           >

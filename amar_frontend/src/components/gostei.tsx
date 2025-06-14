@@ -26,6 +26,7 @@ export function BotaoGostei({
     setQuantidade(inicialmenteQuantidade);
   }, [inicialmenteGostei, inicialmenteQuantidade]);
 
+
   const handleClick = async () => {
     if (loading) return;
     setLoading(true);

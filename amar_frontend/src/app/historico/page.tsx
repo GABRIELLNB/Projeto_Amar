@@ -112,7 +112,6 @@ export default function Histórico() {
     <>
       <SidebarMenu
         userType={userType}
-        userName={userName}
         activeItem="Histórico"
       />
 

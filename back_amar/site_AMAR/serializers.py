@@ -39,10 +39,11 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 # criação do usuário com senha hashada (não salva senha em texto puro).
 class UsuarioSerializer(serializers.ModelSerializer):
     senha = serializers.CharField(write_only=True, required=False, allow_blank=True)
-
+    senha_mascara = serializers.SerializerMethodField()
+    
     class Meta:
         model = Usuario
-        fields = ['email', 'nome', 'cpf', 'telefone', 'senha', 'foto_perfil']
+        fields = ['email', 'nome', 'cpf', 'telefone', 'senha', 'foto_perfil', 'senha_mascara']
         read_only_fields = ['email', 'cpf']  # CPF e email não editáveis
 
     def update(self, instance, validated_data):
@@ -53,6 +54,11 @@ class UsuarioSerializer(serializers.ModelSerializer):
             instance.set_password(senha)
         instance.save()
         return instance
+    def get_senha_mascara(self, obj):
+        # Apenas retorna asteriscos se a senha existir
+        if obj.password:
+            return '********'
+        return None
     
     
 # Serializer para o modelo Disponibilidade, que expõe a disponibilidade
@@ -109,6 +115,8 @@ from rest_framework import serializers
 class AgendamentoSerializer(serializers.ModelSerializer):
     content_type = serializers.PrimaryKeyRelatedField(queryset=ContentType.objects.all())
     object_id = serializers.IntegerField()
+    atendente_nome = serializers.SerializerMethodField()
+    servico = serializers.SerializerMethodField()
 
     class Meta:
         model = Agendamento
@@ -122,9 +130,20 @@ class AgendamentoSerializer(serializers.ModelSerializer):
             'local',
             'sala',
             'status',
-            
+            'atendente_nome',
+            'servico'
         ]
         read_only_fields = ['status']
+
+    def get_atendente_nome(self, obj):
+        if hasattr(obj, 'atendente') and obj.atendente:
+            return getattr(obj.atendente, 'nome', None)
+        return None
+
+    def get_servico(self, obj):
+        if hasattr(obj, 'atendente') and obj.atendente:
+            return getattr(obj.atendente, 'tipo_servico', None)
+        return None
 
     def validate(self, data):
         content_type = data.get('content_type')
@@ -162,9 +181,6 @@ class AgendamentoSerializer(serializers.ModelSerializer):
         return Agendamento.objects.create(usuario=usuario, **validated_data)
 
 
-
-
-
     
 '''
 class LoginSerializer(serializers.Serializer):
@@ -175,7 +191,8 @@ class LoginSerializer(serializers.Serializer):
 
 class ForumsSerializer(serializers.ModelSerializer):
     criador = UsuarioSerializer(read_only=True)
-    total_curtidas = serializers.ReadOnlyField()
+    total_curtidas = serializers.SerializerMethodField()
+
     foto_perfil_criador = serializers.ImageField(source='criador.foto_perfil', read_only=True)
     curtiu = serializers.SerializerMethodField()  # novo campo
      
@@ -184,11 +201,13 @@ class ForumsSerializer(serializers.ModelSerializer):
         fields = ['id', 'criador', 'nome', 'foto_perfil_criador', 'publicacao', 'total_curtidas', 'curtiu']
         
     def get_curtiu(self, obj):
-        request = self.context.get('request', None)
-        if not request or request.user.is_anonymous:
-            return False
-        user = request.user
-        return ForumCurtida.objects.filter(forum=obj, usuario=user).exists()
+        user = self.context['request'].user
+        if user.is_authenticated:
+            return ForumCurtida.objects.filter(forum=obj, usuario=user).exists()
+        return False
+    
+    def get_total_curtidas(self, obj):
+        return obj.curtidas.count()
 
 
 class MensagemForumSerializer(serializers.ModelSerializer):

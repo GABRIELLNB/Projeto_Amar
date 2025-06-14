@@ -36,13 +36,13 @@ export default function RootLayout({
         <link rel="icon" type="image/svg+xml" href="/favicon2/favicon.svg" />
       </head>
 
-      <body>
+  
         <UserProvider>
           <BodyWrapper>
             <main className="px-5 py-8 md:py-0">{children}</main>
           </BodyWrapper>
         </UserProvider>
-      </body>
+  
       
     </html>
   )
