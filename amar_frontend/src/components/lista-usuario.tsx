@@ -55,6 +55,8 @@ export default function AdminUsersPanel() {
   const [usuarios, setUsuarios] = useState<Pessoa[]>([]);
   const [profissionais, setProfissionais] = useState<Pessoa[]>([]);
   const [estagiarios, setEstagiarios] = useState<Pessoa[]>([]);
+  const [mensagem, setMensagem] = useState<string | null>(null);
+  const [tipoMensagem, setTipoMensagem] = useState<"sucesso" | "erro" | null>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -92,11 +94,13 @@ export default function AdminUsersPanel() {
       });
 
       if (!response.ok) {
-        alert("Erro ao deletar. Verifique se o servidor está ativo.");
+        setMensagem("Erro ao deletar. Verifique se o servidor está ativo.");
+        setTipoMensagem("erro");
         return;
       }
 
-      alert(`Registro ${id} deletado com sucesso!`);
+      setMensagem(`Registro ${id} deletado com sucesso!`);
+      setTipoMensagem("sucesso");
 
       // Atualiza o estado local removendo o item deletado
       if (tipo === "usuarios") {
@@ -218,6 +222,15 @@ function renderSection(
   );
 }
 
+useEffect(() => {
+  if (mensagem) {
+    const timer = setTimeout(() => {
+      setMensagem(null);
+      setTipoMensagem(null);
+    }, 4000); // desaparece em 4s
+    return () => clearTimeout(timer);
+  }
+}, [mensagem]);
 
   
   return (
@@ -225,7 +238,7 @@ function renderSection(
       <div className="bg-pink2000 w-full h-20 fixed top-0 left-0 flex items-center px-4 z-50">
         <div className="flex items-center gap-2">
           <IconButton className="bg-pink2000 text-pink1000 p-2 rounded-md hover:text-pink4000 hover:bg-pink2000 cursor-pointer"
-          onClick={() => router.push('/')}
+          onClick={() => router.replace('/')}
           >
             <ArrowLeft />
           </IconButton>
@@ -241,7 +254,17 @@ function renderSection(
             Painel de Usuários
           </h1>
         </div>
-
+{mensagem && (
+  <div
+    className={`p-3 rounded-md mb-4 text-sm shadow-md ${
+      tipoMensagem === "sucesso"
+        ? "bg-green-100 text-green-800"
+        : "bg-red-100 text-red-800"
+    }`}
+  >
+    {mensagem}
+  </div>
+)}
         {renderSection(
   "Usuários",
   "usuarios",

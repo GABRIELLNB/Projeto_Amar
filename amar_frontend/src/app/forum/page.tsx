@@ -6,7 +6,7 @@ import { ChatInput } from "@/components/chat-input";
 import { BotaoGostei } from "@/components/gostei";
 import { IconButton } from "@/components/icon-button";
 import { InputField, InputRoot } from "@/components/input";
-import { ArrowLeft, CircleX, Send } from "lucide-react";
+import { ArrowLeft, CircleX, Send, User } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import React, { useState, useRef, useEffect, useCallback } from "react";
@@ -45,12 +45,16 @@ export default function Forum() {
   const forumIdParam = params.forumId ? Number(params.forumId) : null;
 
   const searchParams = useSearchParams();
-  const forumIdQuery = searchParams.get("id") ? Number(searchParams.get("id")) : null;
+  const forumIdQuery = searchParams.get("id")
+    ? Number(searchParams.get("id"))
+    : null;
 
-// Use apenas uma dessas para controlar o fórum selecionado, ou combine a lógica conforme seu app
-const forumId = forumIdParam ?? forumIdQuery;
-  
+  // Use apenas uma dessas para controlar o fórum selecionado, ou combine a lógica conforme seu app
+  const forumId = forumIdParam ?? forumIdQuery;
+
   const router = useRouter();
+  const [mensagemStatus, setMensagemStatus] = useState<string | null>(null);
+  const [tipoMensagem, setTipoMensagem] = useState<"erro" | "sucesso" | null>(null);
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [sidebarWidth, setSidebarWidth] = useState(350);
@@ -58,7 +62,6 @@ const forumId = forumIdParam ?? forumIdQuery;
   const isResizing = useRef(false);
   const minWidth = 300;
   const maxWidth = 400;
-
 
   const startResizing = () => {
     isResizing.current = true;
@@ -179,15 +182,15 @@ const forumId = forumIdParam ?? forumIdQuery;
   }, [foruns]);
 
   useEffect(() => {
-  if (!forumId || foruns.length === 0) {
-    setSelectedForum(null);
-    return;
-  }
+    if (!forumId || foruns.length === 0) {
+      setSelectedForum(null);
+      return;
+    }
 
-  const idNum = Number(forumId);
-  const forumSelecionado = foruns.find((f) => f.id === idNum) ?? null;
-  setSelectedForum(forumSelecionado);
-}, [forumId, foruns]);
+    const idNum = Number(forumId);
+    const forumSelecionado = foruns.find((f) => f.id === idNum) ?? null;
+    setSelectedForum(forumSelecionado);
+  }, [forumId, foruns]);
 
   const formatarDataSimples = (date: Date) => {
     const dia = String(date.getDate()).padStart(2, "0");
@@ -338,26 +341,32 @@ const forumId = forumIdParam ?? forumIdQuery;
                     onClick={() => setSelectedForum(forum)}
                     className="relative group rounded-br-none flex justify-between cursor-pointer rounded-2xl border border-pink1000 items-start px-6 pt-4 pb-8 bg-pink1000 text-pink2000 font-semibold w-full"
                   >
-                    <div
-                      className="text-left max-w-[200px] break-words w-full"
-                      style={{
-                        maxWidth: "200px",
-                        wordBreak: "break-word",
-                        overflowWrap: "break-word",
-                      }}
-                    >
-                      <div className="text-pink4000 mb-2 text-sm">
-                        {forum.criador.nome}
+                    <span className="text-left">
+                      <div className="flex items-center gap-2 mb-2">
+                        {/* Foto de perfil ou ícone padrão */}
+                        {forum.criador.foto_perfil ? (
+                          <Image
+                            src={forum.criador.foto_perfil}
+                            alt={`Foto de ${forum.criador.nome}`}
+                            width={42}
+                            height={42}
+                            className="rounded-full object-cover w-10 h-10"
+                          />
+                        ) : (
+                          <User className="w-10 h-10 text-pink4000 border rounded-full border-pink3000" />
+                        )}
+
+                        {/* Nome ao lado da foto */}
+                        <div className="text-pink4000 font-semibold">
+                          {forum.criador.nome}
+                        </div>
                       </div>
-
-                      <strong className="block mt-1 break-all w-full">
-                        {forum.nome}
-                      </strong>
-
-                      <div className="text-pink4000 mt-2 text-xs break-words">
+                      <strong className="block mt-2">{forum.nome}</strong>{" "}
+                      <br />
+                      <div className="absolute bottom-[-4] left-0 scale-55 mb-1 text-pink4000">
                         {forum.publicacao}
                       </div>
-                    </div>
+                    </span>
 
                     <div className="absolute bottom-0 right-1 scale-70">
                       <BotaoGostei
@@ -397,8 +406,24 @@ const forumId = forumIdParam ?? forumIdQuery;
                     className="relative group rounded-br-none flex justify-between shadow transition-colors duration-300 hover:border-pink2000 rounded-2xl border cursor-pointer border-pink1000 items-start px-6 pt-4 pb-8 bg-pink1000 text-pink2000 font-semibold w-full"
                   >
                     <span className="text-left">
-                      <div className="absolute top-1 left-6 scale-75 text-pink4000 mb-4">
-                        {forum.criador.nome}
+                      <div className="flex items-center gap-2 mb-2">
+                        {/* Foto de perfil ou ícone padrão */}
+                        {forum.criador.foto_perfil ? (
+                          <Image
+                            src={forum.criador.foto_perfil}
+                            alt={`Foto de ${forum.criador.nome}`}
+                            width={42}
+                            height={42}
+                            className="rounded-full object-cover w-10 h-10"
+                          />
+                        ) : (
+                          <User className="w-10 h-10 text-pink4000 border rounded-full border-pink3000" />
+                        )}
+
+                        {/* Nome ao lado da foto */}
+                        <div className="text-pink4000 font-semibold">
+                          {forum.criador.nome}
+                        </div>
                       </div>
                       <strong className="block mt-2">{forum.nome}</strong>{" "}
                       <br />
@@ -448,7 +473,7 @@ const forumId = forumIdParam ?? forumIdQuery;
         <div className="flex items-center p-3 border-t border-pink2000 rounded-tr-2xl bg-pink2000 gap-2">
           <InputRoot className="flex-20 bg-pink3000 h-10 border border-pink2000 rounded-xl px-4 flex items-center gap-2 focus-within:border-pink4000">
             <InputField
-              placeholder="Nome do fórum"
+              placeholder="Crie um fórum"
               value={novoTitulo}
               onChange={(e) => setNovoTitulo(e.target.value)}
             />
@@ -530,19 +555,31 @@ const forumId = forumIdParam ?? forumIdQuery;
                   return (
                     <div
                       key={msg.id}
-                      className={`flex ${
+                      className={`flex items-end ${
                         isUser ? "justify-end" : "justify-start"
-                      }`}
+                      } gap-2`}
                     >
+                      {/* Foto do autor ou ícone User só se não for você */}
+                      {!isUser &&
+                        (msg.autor.foto_perfil ? (
+                          <img
+                            src={msg.autor.foto_perfil}
+                            alt={`Foto de ${msg.autor.nome}`}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          <User className="w-12 h-12 text-pink4000 border rounded-full border-pink3000" />
+                        ))}
+
                       <div
-                        className={`max-w-[70%] px-4 py-2 rounded-2xl text-sm mb-2 ${
+                        className={`max-w-[80%] px-4 py-2 rounded-2xl text-sm mb-2 ${
                           isUser
                             ? "bg-pink2000 text-pink1000 rounded-br-none"
                             : "bg-pink3000 text-pink2000 rounded-bl-none"
                         }`}
                       >
                         {!isUser && (
-                          <strong className="break-words font-semibold text-pink2000 mb-1">
+                          <strong className="break-words text-[12px] text-pink2000 mb-1">
                             {msg.autor.nome}
                           </strong>
                         )}
@@ -557,11 +594,12 @@ const forumId = forumIdParam ?? forumIdQuery;
                     </div>
                   );
                 })}
+
               <div ref={bottomRef} />
             </div>
 
             {/* Input de mensagem */}
-            <div className="p-4 border-t border-pink2000 max-w-xl mx-auto">
+            <div className="p-4 border-t border-pink2000 max-w-xl mx-auto mb-3">
               <ChatInput
                 forumId={selectedForum?.id ?? 0}
                 inicialmenteGostei={
@@ -597,63 +635,60 @@ const forumId = forumIdParam ?? forumIdQuery;
           </p>
         )}
       </div>
-{excluirModal && forumParaExcluir && (
-  <>
-    {/* backdrop */}
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={() => setExcluirModal(false)} // clicar aqui fecha
-      onKeyDown={(e) =>
-        (e.key === "Enter" || e.key === " ") && setExcluirModal(false)
-      }
-      className="fixed inset-0 z-40 backdrop-blur-sm"
-    />
+      {excluirModal && forumParaExcluir && (
+        <>
+          {/* backdrop */}
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => setExcluirModal(false)} // clicar aqui fecha
+            onKeyDown={(e) =>
+              (e.key === "Enter" || e.key === " ") && setExcluirModal(false)
+            }
+            className="fixed inset-0 z-40 backdrop-blur-sm"
+          />
 
-    {/* modal centralizado com flex */}
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="relative bg-pink1000 rounded-2xl shadow-lg p-6 h-auto max-h-[80vh] max-w-[90vw] border border-pink4000"
-        onClick={(e) => e.stopPropagation()} // IMPORTANTE: previne o fechamento ao clicar dentro
-      >
-        {/* botão voltar - dentro da modal */}
-        <div className="absolute top-4 left-4">
-          <IconButton
-            onClick={() => setExcluirModal(false)}
-            className="p-1.5 bg-pink1000 text-pink4000 rounded-md cursor-pointer transition-colors duration-300 hover:text-pink2000"
-          >
-            <ArrowLeft />
-          </IconButton>
-        </div>
+          {/* modal centralizado com flex */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="relative bg-pink1000 rounded-2xl shadow-lg p-6 h-auto max-h-[80vh] max-w-[90vw] border border-pink4000"
+              onClick={(e) => e.stopPropagation()} // IMPORTANTE: previne o fechamento ao clicar dentro
+            >
+              {/* botão voltar - dentro da modal */}
+              <div className="absolute top-4 left-4">
+                <IconButton
+                  onClick={() => setExcluirModal(false)}
+                  className="p-1.5 bg-pink1000 text-pink4000 rounded-md cursor-pointer transition-colors duration-300 hover:text-pink2000"
+                >
+                  <ArrowLeft />
+                </IconButton>
+              </div>
 
-        {/* faixa superior dentro da modal */}
-        <div className="bg-pink2000 w-full h-4 absolute top-0 left-0 rounded-t-2xl border border-pink2000" />
+              {/* faixa superior dentro da modal */}
+              <div className="bg-pink2000 w-full h-4 absolute top-0 left-0 rounded-t-2xl border border-pink2000" />
 
-        {/* título */}
-        <h2 className="text-xl font-bold mb-5 text-pink4000 text-center">
-          Excluir Fórum
-        </h2>
+              {/* título */}
+              <h2 className="text-xl font-bold mb-5 text-pink4000 text-center">
+                Excluir Fórum
+              </h2>
 
-        {/* mensagem */}
-        <p className="text-pink4000 text-sm mb-8 text-center break-words max-w-full">
-          Tem certeza que deseja excluir&nbsp;
-          <strong>{forumParaExcluir.nome}</strong>?
-        </p>
+              {/* mensagem */}
+              <p className="text-pink4000 text-sm mb-8 text-center break-words max-w-full">
+                Tem certeza que deseja excluir&nbsp;
+                <strong>{forumParaExcluir.nome}</strong>?
+              </p>
 
-        {/* botão confirmar */}
-        <Button
-          onClick={() => excluirForum(forumParaExcluir.id)}
-          className="bg-red text-pink1000 border border-red px-4 py-2 rounded-xl w-full transition-colors duration-300 hover:bg-pink3000 hover:text-red cursor-pointer"
-        >
-          Excluir fórum
-        </Button>
-      </div>
-    </div>
-  </>
-)}
-
-
-
+              {/* botão confirmar */}
+              <Button
+                onClick={() => excluirForum(forumParaExcluir.id)}
+                className="bg-red text-pink1000 border border-red px-4 py-2 rounded-xl w-full transition-colors duration-300 hover:bg-pink3000 hover:text-red cursor-pointer"
+              >
+                Excluir fórum
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }

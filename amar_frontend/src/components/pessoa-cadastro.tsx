@@ -165,7 +165,7 @@ const addHorario = (index: number) => {
   }, [editarCpf, type]);
 
 
-
+  const [mensagem, setMensagem] = useState<string | null>(null);
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     
       event.preventDefault();
@@ -221,11 +221,11 @@ const addHorario = (index: number) => {
           return;
         }
 
-        alert(
-          editarCpf
-            ? "Funcionário atualizado com sucesso!"
-            : "Funcionário cadastrado com sucesso!"
-        );
+      setMensagem(
+        editarCpf
+          ? "Funcionário atualizado com sucesso!"
+          : "Funcionário cadastrado com sucesso!"
+      );
         onSubmit({ tipo: type, ...result.data });
       } catch (err) {
         alert("Erro de rede ou inesperado.");

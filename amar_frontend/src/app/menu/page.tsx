@@ -7,11 +7,13 @@ import SidebarMenu from "@/components/sidebar-menu";
 import { BotaoGostei } from "@/components/gostei";
 import { Button } from "@/components/button";
 import { Forum } from "next/font/google";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, User } from "lucide-react";
+import Image from "next/image";
 
 export default function Menu() {
   const router = useRouter();
   const [isClient, setIsClient] = useState(false);
+  const [mensagemErro, setMensagemErro] = useState<string | null>(null);
 
   const [userType, setUserType] = useState<
     "profissional" | "estagiario" | "outro"
@@ -57,10 +59,11 @@ export default function Menu() {
         setLinksEImagens(json.links_e_imagens);
       })
       .catch(() => {
-        alert("Sessão expirada ou inválida. Faça login novamente.");
+        setMensagemErro("Sessão expirada ou inválida. Faça login novamente.");
         localStorage.removeItem("token");
-        router.push("/");
+        setTimeout(() => router.push("/"), 3000); // redireciona após 3 segundos
       });
+
   }, [router]);
 
   // Cria um array com o tamanho máximo dos arrays
@@ -88,7 +91,11 @@ if (proximoAgendamento) {
 return (
     <div>
       <SidebarMenu userType={userType} activeItem="Menu" />
-
+       {mensagemErro && (
+      <div className="bg-red-100 text-red-700 border border-red-300 px-4 py-2 rounded mb-4 text-center">
+        {mensagemErro}
+      </div>
+    )}
       <main className="ml-[360px] p-6">
         <section className="mb-10">
           <div className="grid grid-cols-2 gap-6 p-4">
@@ -107,11 +114,27 @@ return (
                         className="relative group flex flex-col justify-between shadow-md h-50 cursor-pointer rounded-2xl rounded-br-none border border-pink1000 px-5 pt-5 pb-14 bg-pink1000 text-pink2000 font-semibold w-full transition-colors duration-300 hover:bg-pink1000 hover:text-pink4000 hover:border-pink4000"
                       >
                         <div className="text-left text-sm mb-4">
-                          <p>{item.nome || "Título do fórum"}</p>
-                          <p className="text-xs mt-1 text-pink3000">
-                            {item.publicacao || "Sem descrição"}
-                          </p>
+<div className="text-left text-sm mb-4 max-w-xl w-full">
+  <div className="flex items-center gap-2 mb-2">
+    {item.criador.foto_perfil ? (
+      <Image
+        src={item.criador.foto_perfil}
+        alt={`Foto de ${item.criador.nome}`}
+        width={42}
+        height={42}
+        className="rounded-full object-cover w-10 h-10"
+      />
+    ) : (
+      <User className="w-10 h-10 text-pink4000 border rounded-full border-pink3000" />
+    )}
+    <div className="text-pink4000 font-semibold">{item.criador.nome}</div>
+  </div>
+  <p>{item.nome || "Título do fórum"}</p>
+  <p className="text-[10px] mt-1 text-pink4000 bg-transparent">{item.publicacao || "Sem descrição"}</p>
+</div>
+
                         </div>
+
 
                         <div className="absolute bottom-3 left-5 right-5 flex justify-between items-center">
                           <div className="flex items-center gap-2">

@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 from datetime import datetime
 from .models import Agendamento, ForumCurtida
 from django.db.models import Count
+from rest_framework.parsers import MultiPartParser, FormParser
 
 #from .utils import get_tipo_usuario #PARA O MENU
 from .models import (
@@ -234,7 +235,7 @@ class UsuarioListView(generics.ListAPIView):
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
     permission_classes = [AllowAny]
-
+    
 # View para listar todos os profissionais cadastrados
 class ProfissionalListView(generics.ListAPIView):
     queryset = Profissional.objects.all()
@@ -248,17 +249,24 @@ class EstagiarioListView(generics.ListAPIView):
     permission_classes = [AllowAny]
 
 
-# View para detalhar e deletar um usuário comum pelo id (pk)
+from rest_framework.permissions import BasePermission
+
+class IsOwner(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return obj == request.user
+
 class UsuarioDetailView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsOwner]
+    parser_classes = [MultiPartParser, FormParser]
 
     def delete(self, request, pk):
-        try:
-            usuario = Usuario.objects.get(pk=pk)
-            usuario.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except Usuario.DoesNotExist:
-            return Response({'error': 'Usuário não encontrado'}, status=status.HTTP_404_NOT_FOUND)
+        usuario = get_object_or_404(Usuario, pk=pk)
+
+        # Verifica permissão personalizada
+        self.check_object_permissions(request, usuario)
+
+        usuario.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # View para detalhar e deletar um profissional pelo id (pk)

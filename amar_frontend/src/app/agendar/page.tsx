@@ -26,6 +26,9 @@ type HorarioDisponivel = {
 
 export default function Agendar() {
   const router = useRouter();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
   const [agendados, setAgendados] = useState<number[]>([]);
   const [buscaNome, setBuscaNome] = useState("");
 
@@ -43,9 +46,9 @@ export default function Agendar() {
     );
 
     if (!horarioSelecionado || !selectedDate) {
-      alert("Data ou horário inválido.");
-      return;
-    }
+    setErrorMessage("Data ou horário inválido.");
+    return;
+  }
 
     const tipoAtendente = horarioSelecionado.tipo_atendente.toLowerCase();
     console.log("tipoAtendente recebido:", tipoAtendente);
@@ -58,14 +61,14 @@ export default function Agendar() {
     const contentType = contentTypeMap[tipoAtendente];
 
     if (!contentType) {
-      alert("Tipo de atendente desconhecido.");
-      return;
-    }
+    setErrorMessage("Tipo de atendente desconhecido.");
+    return;
+  }
 
     console.log("Usuário ID:", localStorage.getItem("usuario_id"));
     const usuarioId = localStorage.getItem("usuario_id");
     if (!usuarioId) {
-      alert("Usuário não autenticado");
+      setErrorMessage("Usuário não autenticado");
       return;
     }
 
@@ -100,6 +103,8 @@ export default function Agendar() {
 
       // Aqui você pode marcar o horário como "agendado" — você precisa de um estado para isso
       setAgendados((prev) => [...prev, horarioId]);
+      setSuccessMessage("Horário marcado com sucesso!");
+      setErrorMessage(null); // Limpa mensagens de erro anteriores
 
       // Espera 3 segundos para o usuário ver o "Marcado"
       setTimeout(async () => {
@@ -107,6 +112,7 @@ export default function Agendar() {
         setHorariosDisponiveis((prev) =>
           prev.filter((item) => item.id !== horarioId)
         );
+        setTimeout(() => setSuccessMessage(null), 2000);
         // Remove o horário do marcado (se quiser)
         setAgendados((prev) => prev.filter((id) => id !== horarioId));
 
@@ -126,9 +132,9 @@ export default function Agendar() {
         setHorariosDisponiveis(dados);
       }, 3000);
     } catch (error: any) {
-      console.error(error);
-      alert(error.message || "Erro ao marcar o horário.");
-    }
+    console.error(error);
+    setErrorMessage(error.message || "Erro ao marcar o horário.");
+  }
   };
 
   useEffect(() => {
@@ -210,6 +216,11 @@ export default function Agendar() {
 
   return diaOk && horaOk && nomeOk;
 });
+
+useEffect(() => {
+  setErrorMessage(null);
+  setSuccessMessage(null);
+}, [selectedDate]);
 
   return (
     <>
@@ -373,6 +384,18 @@ export default function Agendar() {
                 )}
               </tbody>
             </table>
+            {errorMessage && (
+  <div className="bg-red-100 text-red-700 p-2 rounded mb-4 text-center">
+    {errorMessage}
+  </div>
+)}
+
+{successMessage && (
+  <div className="bg-green-100 text-green-700 p-2 rounded mb-4 text-center">
+    {successMessage}
+  </div>
+)}
+
           </div>
         </div>
       </div>

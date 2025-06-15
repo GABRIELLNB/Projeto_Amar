@@ -231,7 +231,7 @@ export default function SidebarMenu({
         <div className="flex items-center p-4 border-t border-pink2000 rounded-tr-2xl bg-pink2000 gap-2">
           <InputRoot className="flex-20 bg-pink3000 h-10 border border-pink2000 rounded-xl px-4 flex items-center gap-2 focus-within:border-pink4000">
             <InputField
-              placeholder="Nome do fórum"
+              placeholder="Crie um fórum"
               value={novoTitulo}
               onChange={(e) => setNovoTitulo(e.target.value)}
             />

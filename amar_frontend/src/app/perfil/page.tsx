@@ -18,10 +18,13 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { useUser } from "@/contexts/userContext";
 
-
 export default function EditarPerfil() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [mensagem, setMensagem] = useState<string | null>(null);
+  const [tipoMensagem, setTipoMensagem] = useState<"erro" | "sucesso" | null>(
+    null
+  );
 
   const [userType, setUserType] = useState<
     "profissional" | "estagiario" | "outro"
@@ -68,43 +71,53 @@ export default function EditarPerfil() {
         setTel(data.telefone || "");
         setSenhaMascara(data.senha_mascara || null); // <- aqui
       })
-      .catch(() => alert("Erro ao carregar perfil"));
+      .catch(() => {
+        setMensagem("Erro ao carregar perfil");
+        setTipoMensagem("erro");
+      });
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
     if (senha !== confirmarSenha) {
-      alert("As senhas não coincidem");
+      setMensagem("As senhas não coincidem");
+      setTipoMensagem("erro");
       return;
     }
 
     const token = localStorage.getItem("token");
     if (!token) {
-      alert("Você precisa estar logado");
+      setMensagem("Você precisa estar logado");
+      setTipoMensagem("erro");
       return;
     }
 
-    const payload: any = {
-      nome,
-      email,
-      telefone: tel,
-    };
+    const formData = new FormData();
+    formData.append("nome", nome);
+    formData.append("email", email);
+    formData.append("telefone", tel);
     if (senha.trim() !== "") {
-      payload.password = senha;
+      formData.append("senha", senha);
+    }
+
+    // Se imagem nova foi selecionada
+    const file = inputFileRef.current?.files?.[0];
+    if (file) {
+      formData.append("foto_perfil", file);
     }
 
     const response = await fetch("http://localhost:8000/api/usuario/perfil/", {
       method: "PUT",
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(payload),
+      body: formData, // ✅ CORRETO
     });
 
     if (response.ok) {
-      alert("Perfil atualizado com sucesso!");
+      setMensagem("Perfil atualizado com sucesso!");
+      setTipoMensagem("sucesso");
       setUserName(nome);
       if (imagemPerfil) {
         setUserImage(imagemPerfil);
@@ -114,7 +127,8 @@ export default function EditarPerfil() {
       setSenha("");
       setConfirmarSenha("");
     } else {
-      alert("Erro ao atualizar perfil");
+      setMensagem("Erro ao atualizar perfil");
+      setTipoMensagem("erro");
     }
   }
 
@@ -136,6 +150,17 @@ export default function EditarPerfil() {
     const imagemSalva = localStorage.getItem("imagem_perfil");
     if (imagemSalva) setImagemPerfil(imagemSalva);
   }, []);
+
+  useEffect(() => {
+    if (mensagem) {
+      const timer = setTimeout(() => {
+        setMensagem(null);
+        setTipoMensagem(null);
+      }, 4000); // 4000ms = 4 segundos
+
+      return () => clearTimeout(timer); // limpa o timeout se o componente desmontar ou mensagem mudar
+    }
+  }, [mensagem]);
 
   if (!isClient) return null;
   return (
@@ -303,6 +328,17 @@ export default function EditarPerfil() {
                   </button>
                 </InputRoot>
 
+                {mensagem && (
+                  <div
+                    className={`mb-4 px-4 py-2 rounded text-center ${
+                      tipoMensagem === "erro"
+                        ? "bg-red-100 text-red-700 border border-red-300"
+                        : "bg-green-100 text-green-700 border border-green-300"
+                    }`}
+                  >
+                    {mensagem}
+                  </div>
+                )}
                 <Button
                   type="submit"
                   className=" cursor-pointer mt-6 bg-pink2000 text-pink100 rounded-xl w-full py-3 font-semibold hover:bg-pink3000 hover:text-pink4000 transition"

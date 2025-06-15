@@ -69,17 +69,22 @@ export default function Configuracoes() {
     }
   };
 
+  const [copyMessage, setCopyMessage] = useState<string | null>(null);
+  const [messageColor, setMessageColor] = useState<"success" | "error">("success");
 
   const copyToClipboard = async (text: string) => {
     if (typeof window !== "undefined" && navigator?.clipboard) {
-    try {
-      await navigator.clipboard.writeText(text);
-      alert("Copiado para a área de transferência!");
-    } catch (err) {
-      alert("Erro ao copiar.");
-      console.error("Falha ao copiar: ", err);
+      try {
+  await navigator.clipboard.writeText(text);
+  setCopyMessage("Copiado para a área de transferência!");
+  setMessageColor("success");
+  setTimeout(() => setCopyMessage(null), 3000);
+} catch (err) {
+  setCopyMessage("Erro ao copiar.");
+  setMessageColor("error");
+  setTimeout(() => setCopyMessage(null), 3000);
+}
     }
-  }
   };
    if (!isClient) return null; // evita renderização no build
 
@@ -87,7 +92,6 @@ export default function Configuracoes() {
     <div>
       <SidebarMenu
         userType={userType}
-        userName={userName}
         activeItem="Configurações"
       />
 
@@ -401,7 +405,7 @@ A plataforma poderá alterar estes Termos de Uso a qualquer momento. É responsa
 
           {/* Pop-up acima da camada transparente */}
           <div className="fixed top-1/2 left-[60%] transform -translate-x-1/2 -translate-y-1/2 z-50">
-            <div className="relative bg-pink1000 rounded-2xl shadow-lg p-6 w-[90vw] max-w-sm h-[300px] border border-pink4000">
+            <div className="relative bg-pink1000 rounded-2xl shadow-lg p-4 w-[80vw] max-w-sm h-[320px] border border-pink4000">
               {/* Botão de voltar */}
               <div className="absolute top-4 left-1">
                 <IconButton
@@ -416,7 +420,7 @@ A plataforma poderá alterar estes Termos de Uso a qualquer momento. É responsa
               <div className="bg-pink2000 w-full h-4 absolute top-[-1] left-0 rounded-t-2xl border border-pink4000" />
 
               {/* Título */}
-              <h2 className="text-xl font-bold mb-10 text-pink4000 text-center">
+              <h2 className="text-xl font-bold mb-10 mt-2 text-pink4000 text-center">
                 Ajuda
               </h2>
 
@@ -447,6 +451,7 @@ A plataforma poderá alterar estes Termos de Uso a qualquer momento. É responsa
                 </IconButton>
               </div>
 
+
               {/* Botão centralizado */}
               <div className="flex justify-center">
                 <Button
@@ -455,6 +460,13 @@ A plataforma poderá alterar estes Termos de Uso a qualquer momento. É responsa
                 >
                   Fechar
                 </Button>
+                {copyMessage && (
+  <div className={`fixed top-68 left-2/3 transform -translate-x-1/2 w-full ml-[-14]
+    px-4 py-2 rounded z-50  text-sm
+    ${messageColor === "success" ? "bg-transparent text-green-700" : "bg-red-500 text-white"}`}>
+    {copyMessage}
+  </div>
+)}
               </div>
             </div>
           </div>

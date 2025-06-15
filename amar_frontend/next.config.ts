@@ -5,7 +5,9 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true, // ⚠️ ignora erros de TypeScript no build
   },
-  // outras configurações aqui, se necessário
+  images: {
+    domains: ['localhost'],  // adiciona localhost aqui
+  },
 };
 
 module.exports = nextConfig;

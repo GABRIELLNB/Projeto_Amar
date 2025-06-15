@@ -85,7 +85,7 @@ export function ChatInput({
       
 
       <div className="relative w-full">
-        <InputRoot className="group bg-pink3000 h-12 border border-pink2000 w-full rounded-xl px-4 flex items-center gap-2 focus-within:border-pink4000 data-[error=true]:border-red-700">
+        <InputRoot className="group bg-pink3000 h-10 border border-pink2000 w-full rounded-xl px-4 flex items-center gap-2 focus-within:border-pink4000 data-[error=true]:border-red-700">
           <InputIcon className="text-pink2000 group-focus-within:text-pink4000">
             <Button
               type="button"

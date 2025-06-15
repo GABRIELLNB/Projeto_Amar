@@ -104,7 +104,6 @@ const cancelarAgendamento = async (id: number) => {
     <>
       <SidebarMenu
         userType={userType}
-        userName={userName}
         activeItem="Consultas Marcadas"
       />
 

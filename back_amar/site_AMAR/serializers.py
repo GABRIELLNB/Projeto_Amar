@@ -208,6 +208,12 @@ class ForumsSerializer(serializers.ModelSerializer):
     
     def get_total_curtidas(self, obj):
         return obj.curtidas.count()
+    
+    def get_foto_perfil_criador(self, obj):
+        request = self.context.get("request")
+        if obj.criador.foto_perfil and hasattr(obj.criador.foto_perfil, 'url'):
+            return request.build_absolute_uri(obj.criador.foto_perfil.url)
+        return None
 
 
 class MensagemForumSerializer(serializers.ModelSerializer):

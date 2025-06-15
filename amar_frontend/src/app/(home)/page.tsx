@@ -22,6 +22,7 @@ export default function Home() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const {
     register,
@@ -63,9 +64,10 @@ export default function Home() {
         router.push("/menu");
       }
     } catch (error) {
-      console.error("Falha no login:", error);
-      alert("Usuário ou senha inválidos");
-    }
+    console.error("Falha no login:", error);
+    setErrorMessage("Usuário ou senha inválidos");
+  }
+
   }
 
   return (
@@ -139,6 +141,12 @@ export default function Home() {
           </div>
 
           <br />
+{errorMessage && (
+  <div className="flex justify-center mt-2">
+    <p className="text-red-600 text-sm">{errorMessage}</p>
+  </div>
+)}
+
 
           <Button type="submit">
             <span className="mx-auto">Entrar</span>
