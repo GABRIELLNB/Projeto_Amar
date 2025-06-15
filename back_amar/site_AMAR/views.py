@@ -41,7 +41,9 @@ from .serializers import MyTokenObtainPairSerializer
 # View para autenticação personalizada usando JWT
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
-
+    
+    def get_serializer_context(self):
+        return {'request': self.request}
 
 # Utilitário
 def normalizar_cpf(cpf):
@@ -794,18 +796,18 @@ class EditarPerfilView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        serializer = UsuarioSerializer(request.user)
+        serializer = UsuarioSerializer(request.user, context={'request': request})
         return Response(serializer.data)
 
     def patch(self, request):
-        serializer = UsuarioSerializer(request.user, data=request.data, partial=True)
+        serializer = UsuarioSerializer(request.user, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request):
-        serializer = UsuarioSerializer(request.user, data=request.data, partial=True)  # partial=True permite edição parcial
+        serializer = UsuarioSerializer(request.user, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)

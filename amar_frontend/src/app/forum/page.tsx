@@ -565,7 +565,7 @@ export default function Forum() {
                           <img
                             src={msg.autor.foto_perfil}
                             alt={`Foto de ${msg.autor.nome}`}
-                            className="w-8 h-8 rounded-full object-cover"
+                            className="w-12 h-12 rounded-full object-cover"
                           />
                         ) : (
                           <User className="w-12 h-12 text-pink4000 border rounded-full border-pink3000" />

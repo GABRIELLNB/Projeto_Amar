@@ -9,6 +9,8 @@ import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/button";
 import { InputField, InputIcon, InputRoot } from "@/components/input";
 import { useState } from "react";
+import { useUser } from "@/contexts/userContext";
+
 
 // Schema de validação com Zod
 const loginSchema = z.object({
@@ -23,6 +25,7 @@ export default function Home() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { setUserName, setUserImage } = useUser();
 
   const {
     register,
@@ -33,7 +36,9 @@ export default function Home() {
   });
 
   async function onLogin(data: LoginSchema) {
+    
     try {
+      console.log("Dados do login:", data);
       const response = await fetch("http://localhost:8000/api/token/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -48,19 +53,34 @@ export default function Home() {
       const json = await response.json();
       console.log("Resposta do backend:", json);
 
-      localStorage.setItem("token", json.access);
-      localStorage.setItem("user_type", json.user_type); // Salva tipo de usuário
-      localStorage.setItem("user_name", json.name); // Salva nome, se disponível
-      localStorage.setItem("usuario_id", json.id);
+      const backendUrl = "http://localhost:8000";
+      const imagemPerfilBackend = json.user?.imagem_perfil ?? null;
 
+      const imagemCompleta = imagemPerfilBackend
+        ? (imagemPerfilBackend.startsWith('http') ? imagemPerfilBackend : `${backendUrl}${imagemPerfilBackend}`)
+        : null;
+
+
+
+      localStorage.setItem("token", json.access);
+      localStorage.setItem("user_type", json.user_type);
+      localStorage.setItem("user_name", json.name);
+      localStorage.setItem("usuario_id", json.id);
+      localStorage.setItem("imagem_perfil", imagemCompleta ?? "");
+
+      setUserImage(imagemCompleta);
+      setUserName(json.name);
+
+      console.log("Imagem de perfil:", imagemCompleta);
+            
       if (json.is_superuser) {
+        console.log("Redirecionando para /menu-adm");
         router.push("/menu-adm");
-      } else if (
-        json.user_type === "profissional" ||
-        json.user_type === "estagiario"
-      ) {
+      } else if (json.user_type === "profissional" || json.user_type === "estagiario") {
+        console.log("Redirecionando para /menu");
         router.push("/menu");
       } else {
+        console.log("Redirecionando para /menu");
         router.push("/menu");
       }
     } catch (error) {

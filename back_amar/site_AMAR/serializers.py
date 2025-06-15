@@ -31,7 +31,8 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         data['user_type'] = user_type
         
         data['name'] = user.nome  
-
+        user_serializer = UsuarioSerializer(user, context=self.context)
+        data['user'] = user_serializer.data
         return data
 
 
@@ -40,10 +41,11 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 class UsuarioSerializer(serializers.ModelSerializer):
     senha = serializers.CharField(write_only=True, required=False, allow_blank=True)
     senha_mascara = serializers.SerializerMethodField()
+    imagem_perfil = serializers.SerializerMethodField()  # ✅ Adicione isso
     
     class Meta:
         model = Usuario
-        fields = ['email', 'nome', 'cpf', 'telefone', 'senha', 'foto_perfil', 'senha_mascara']
+        fields = ['email', 'nome', 'cpf', 'telefone', 'senha', 'foto_perfil', 'senha_mascara', 'imagem_perfil']
         read_only_fields = ['email', 'cpf']  # CPF e email não editáveis
 
     def update(self, instance, validated_data):
@@ -58,6 +60,13 @@ class UsuarioSerializer(serializers.ModelSerializer):
         # Apenas retorna asteriscos se a senha existir
         if obj.password:
             return '********'
+        return None
+    def get_imagem_perfil(self, obj):
+        request = self.context.get('request')
+        if obj.foto_perfil and hasattr(obj.foto_perfil, 'url'):
+            if request:
+                return request.build_absolute_uri(obj.foto_perfil.url)
+            return obj.foto_perfil.url
         return None
     
     

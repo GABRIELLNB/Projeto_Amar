@@ -30,7 +30,8 @@ export default function EditarPerfil() {
     "profissional" | "estagiario" | "outro"
   >("outro");
 
-  const { setUserName, setUserImage } = useUser();
+
+
   const [nome, setNome] = useState("");
   const [cpf, setCpf] = useState("");
   const [email, setEmail] = useState("");
@@ -44,6 +45,15 @@ export default function EditarPerfil() {
   const inputFileRef = useRef<HTMLInputElement>(null);
   const [modalAberto, setModalAberto] = useState(false);
 
+  const { setUserName, setUserImage } = useUser();
+
+  useEffect(() => {
+    const nome = localStorage.getItem("user_name");
+    const imagem = localStorage.getItem("imagem_perfil");
+    if (nome) setUserName(nome);
+    if (imagem) setUserImage(imagem);
+  }, []);
+
   useEffect(() => {
     setIsClient(true);
     const storedUserType = localStorage.getItem("user_type") as
@@ -51,8 +61,11 @@ export default function EditarPerfil() {
       | "estagiario"
       | "outro";
     const storedUserName = localStorage.getItem("user_name") || "";
+        const storedUserImage = localStorage.getItem("imagem_perfil"); //
+
     if (storedUserType) setUserType(storedUserType);
     setUserName(storedUserName);
+    if (storedUserImage) setUserImage(storedUserImage); // <-- aqui
 
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -119,9 +132,10 @@ export default function EditarPerfil() {
       setMensagem("Perfil atualizado com sucesso!");
       setTipoMensagem("sucesso");
       setUserName(nome);
-      if (imagemPerfil) {
-        setUserImage(imagemPerfil);
-        localStorage.setItem("imagem_perfil", imagemPerfil);
+      const novaImagem = imagemPerfil ?? localStorage.getItem("imagem_perfil");
+      if (novaImagem) {
+        setUserImage(novaImagem);
+        localStorage.setItem("imagem_perfil", novaImagem);
       }
       localStorage.setItem("user_name", nome);
       setSenha("");
