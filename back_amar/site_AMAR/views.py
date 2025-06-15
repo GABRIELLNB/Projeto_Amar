@@ -7,6 +7,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils.dateparse import parse_date
 from rest_framework import status, generics, permissions
 from rest_framework.decorators import api_view, permission_classes
+from django.shortcuts import get_object_or_404
+from django.utils.timezone import now
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -490,12 +492,6 @@ class DisponibilidadesPorDataView(APIView):
 
         return Response(serializer.data)
 
-
-from django.contrib.contenttypes.models import ContentType
-from rest_framework import generics
-from .models import Agendamento, Profissional, Estagiario
-from .serializers import AgendamentoSerializer
-
 class MinhasConsultasAPIView(generics.ListAPIView):
     serializer_class = AgendamentoSerializer
 
@@ -568,60 +564,6 @@ class DisponibilidadesPorhorariosView(APIView):
 
         return Response(resultado)
 
-"""
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from django.contrib.contenttypes.models import ContentType
-
-
-class DatasDisponiveisView(APIView):
-    def get(self, request):
-        prof_ct = ContentType.objects.get_for_model(Profissional)
-        est_ct = ContentType.objects.get_for_model(Estagiario)
-
-        disponibilidades = Disponibilidade.objects.filter(
-            content_type__in=[prof_ct, est_ct]
-        )
-
-        user = request.user
-        user_ct = None
-        user_obj_id = None
-
-        if hasattr(user, 'profissional'):
-            user_ct = prof_ct
-            user_obj_id = user.profissional.id
-        elif hasattr(user, 'estagiario'):
-            user_ct = est_ct
-            user_obj_id = user.estagiario.id
-
-        if user_ct and user_obj_id:
-            disponibilidades = disponibilidades.exclude(
-                content_type=user_ct,
-                object_id=user_obj_id
-            )
-
-        # Agora pegar as datas únicas ordenadas
-        datas_unicas = disponibilidades.values_list('dia', flat=True).distinct().order_by('dia')
-
-        return Response(list(datas_unicas))
-"""
-
-''' #Não sei se via usar isso porque separei as viwes para organizar
-class ForumDetailView(APIView):
-    def get(self, request, forum_id):
-        try:
-            forum = Forums.objects.get(id=forum_id)
-        except Forums.DoesNotExist:
-            return Response({'detail': 'Fórum não encontrado'}, status=404)
-        
-        serializer = ForumSerializer(forum)
-        return Response(serializer.data)
-'''
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status, permissions
-from django.shortcuts import get_object_or_404
 
 class ForumsAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -782,16 +724,6 @@ class MensagemForumListAPIView(generics.ListAPIView):
 
 
 
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
-
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
-
 class EditarPerfilView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -813,120 +745,6 @@ class EditarPerfilView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-
-
-
-'''
-class MenuView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        usuario = request.user
-        tipo = get_tipo_usuario(usuario)
-
-        # Buscar os fóruns mais curtidos
-        foruns = Forums.objects.order_by('-like')[:10]
-        serializer = ForumSerializer(foruns, many=True)
-
-        data = {
-            'nome': usuario.nome,
-            'email': usuario.email,
-            'tipo_usuario': tipo,
-            'opcoes_menu': [
-                'Editar perfil',
-                'Bate-Papo',
-                'Agendar',
-                'Histórico',
-                'Configurações',
-            ],
-            'extras': {
-                'forum_mais_valiados': serializer.data,  # agora vem do banco!
-                'propagandas': [
-                    {'imagem': '/media/banner1.jpg', 'link': '/promo1'},
-                    {'imagem': '/media/banner2.jpg', 'link': '/promo2'}
-                ]
-            }
-        }
-
-        return Response(data, status=status.HTTP_200_OK)
-'''
-"""
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
-from django.utils import timezone
-from django.db.models import Count
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from .models import Agendamento, Forums
-from .serializers import ForumsSerializer
-from datetime import date
-
-class MenuView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        user = request.user
-
-        # Tipo de usuário
-        if hasattr(user, 'profissional'):
-            user_type = 'profissional'
-        elif hasattr(user, 'estagiario'):
-            user_type = 'estagiario'
-        else:
-            user_type = 'usuario'
-
-        # Nome do usuário
-        nome_usuario = user.nome
-
-        # Fórum mais curtido
-        top_foruns = Forums.objects.all().order_by('-curtidas__count')[:4]  # top 4
-        forum_serializer = ForumsSerializer(top_foruns, many=True, context={"request": request})
-
-        # Próximo agendamento
-        proximo_agendamento = Agendamento.objects.filter(usuario=user, dia__gte=date.today()).order_by('dia', 'horario').first()
-        if proximo_agendamento:
-            agendamento_info = {
-                'dia': proximo_agendamento.dia.strftime('%d/%m/%Y'),
-                'horario': proximo_agendamento.horario if isinstance(proximo_agendamento.horario, str) else proximo_agendamento.horario.strftime('%H:%M'),
-                'atendente': proximo_agendamento.atendente.nome if proximo_agendamento.atendente else 'N/A',
-                'local': proximo_agendamento.local if proximo_agendamento.local else 'N/A',
-                'status': proximo_agendamento.status,
-            }
-        else:
-            agendamento_info = None
-
-        # Links e imagens (simulado fixo; você pode fazer dinâmico depois)
-        links_e_imagens = [
-            {
-                "link": "https://exemplo.com/artigo1",
-                "imagem": "https://via.placeholder.com/150",
-                "descricao": "Dicas para cuidar da saúde mental",
-            },
-            {
-                "link": "https://exemplo.com/artigo2",
-                "imagem": "https://via.placeholder.com/150",
-                "descricao": "Como lidar com a ansiedade",
-            }
-        ]
-
-        return Response({
-            "usuario": {"nome": nome_usuario},
-            "user_type": user_type,
-            "top_foruns": forum_serializer.data,
-            "proximo_agendamento": agendamento_info,
-            "links_e_imagens": links_e_imagens,
-        })
-"""
-from django.db.models import Count
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from django.utils.timezone import now
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
