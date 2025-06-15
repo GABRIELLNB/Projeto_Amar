@@ -531,11 +531,11 @@ export default function Forum() {
                 {selectedForum?.nome}
               </h1>
             </div>
-
+di
             {/* Área do chat rolável */}
             <div
               className="chat-container overflow-y-auto p-4 pt-20" // <-- 64 px = altura da barra
-              style={{ height: "100vh" }}
+              style={{ height: "90vh" }}
             >
               {mensagensDoForum.length === 0 && (
                 <p className="text-center text-pink4000 mt-4">
@@ -565,10 +565,10 @@ export default function Forum() {
                           <img
                             src={msg.autor.foto_perfil}
                             alt={`Foto de ${msg.autor.nome}`}
-                            className="w-12 h-12 rounded-full object-cover"
+                            className="w-10 h-10 rounded-full object-cover"
                           />
                         ) : (
-                          <User className="w-12 h-12 text-pink4000 border rounded-full border-pink3000" />
+                          <User className="w-10 h-10 text-pink4000 border rounded-full border-pink3000" />
                         ))}
 
                       <div

@@ -92,7 +92,7 @@ return (
     <div>
       <SidebarMenu userType={userType} activeItem="Menu" />
        {mensagemErro && (
-      <div className="bg-red-100 text-red-700 border border-red-300 px-4 py-2 rounded mb-4 text-center">
+      <div className="bg-red-100 text-red-700 border border-red-300 justify-center items-center px-4 py-2 rounded mb-4 text-center">
         {mensagemErro}
       </div>
     )}

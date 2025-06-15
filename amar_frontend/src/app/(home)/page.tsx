@@ -8,7 +8,7 @@ import Image from "next/image";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/button";
 import { InputField, InputIcon, InputRoot } from "@/components/input";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useUser } from "@/contexts/userContext";
 
 
@@ -34,6 +34,13 @@ export default function Home() {
   } = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
   });
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      router.replace("/menu");
+    }
+  }, [router]);
 
   async function onLogin(data: LoginSchema) {
     
@@ -75,13 +82,13 @@ export default function Home() {
             
       if (json.is_superuser) {
         console.log("Redirecionando para /menu-adm");
-        router.push("/menu-adm");
+        router.replace("/menu-adm");
       } else if (json.user_type === "profissional" || json.user_type === "estagiario") {
         console.log("Redirecionando para /menu");
-        router.push("/menu");
+        router.replace("/menu");
       } else {
         console.log("Redirecionando para /menu");
-        router.push("/menu");
+        router.replace("/menu");
       }
     } catch (error) {
     console.error("Falha no login:", error);
