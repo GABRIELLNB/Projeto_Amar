@@ -45,7 +45,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Usuario
-        fields = ['email', 'nome', 'cpf', 'telefone', 'senha', 'foto_perfil', 'senha_mascara', 'imagem_perfil']
+        fields = ['id','email', 'nome', 'cpf', 'telefone', 'senha', 'foto_perfil', 'senha_mascara', 'imagem_perfil']
         #read_only_fields = ['email', 'cpf']  # CPF e email não editáveis
 
     def update(self, instance, validated_data):

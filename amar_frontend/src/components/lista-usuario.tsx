@@ -16,8 +16,6 @@ type Pessoa = {
 };
 
 export default function AdminUsersPanel() {
-  
-
   const [modalTop, setModalTop] = useState<number | null>(null);
   const [isExit, setIsExit] = useState(false);
   const [idToDelete, setIdToDelete] = useState<number | null>(null);
@@ -56,7 +54,9 @@ export default function AdminUsersPanel() {
   const [profissionais, setProfissionais] = useState<Pessoa[]>([]);
   const [estagiarios, setEstagiarios] = useState<Pessoa[]>([]);
   const [mensagem, setMensagem] = useState<string | null>(null);
-  const [tipoMensagem, setTipoMensagem] = useState<"sucesso" | "erro" | null>(null);
+  const [tipoMensagem, setTipoMensagem] = useState<"sucesso" | "erro" | null>(
+    null
+  );
 
   useEffect(() => {
     async function fetchData() {
@@ -89,8 +89,12 @@ export default function AdminUsersPanel() {
     const endpoint = `http://localhost:8000/api/${tipo}/${id}/`;
 
     try {
+      const token = localStorage.getItem("token");
       const response = await fetch(endpoint, {
         method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (!response.ok) {
@@ -128,117 +132,129 @@ export default function AdminUsersPanel() {
 
     const lowerTerm = termoBusca.toLowerCase();
 
-    return pessoas.filter(({ nome, email, cpf }) =>
-      (nome?.toLowerCase() || "").includes(lowerTerm) ||
-      (email?.toLowerCase() || "").includes(lowerTerm) ||
-      (cpf?.toLowerCase() || "").includes(lowerTerm)
+    return pessoas.filter(
+      ({ nome, email, cpf }) =>
+        (nome?.toLowerCase() || "").includes(lowerTerm) ||
+        (email?.toLowerCase() || "").includes(lowerTerm) ||
+        (cpf?.toLowerCase() || "").includes(lowerTerm)
     );
   }
 
+  function renderSection(
+    title: string,
+    sectionKey: keyof typeof open,
+    isOpen: boolean,
+    items: Pessoa[],
+    buttonText: string,
+    termoBusca: string,
+    setTermoBusca: React.Dispatch<React.SetStateAction<string>>
+  ) {
+    return (
+      <div className="mb-4">
+        <Button
+          className="group flex justify-between items-center px-5 h-12 bg-pink2000 text-pink100 font-semibold rounded-xl w-full cursor-pointer transition-colors duration-300 hover:bg-pink3000 hover:text-pink4000 shadow"
+          onClick={() => toggle(sectionKey)}
+        >
+          <span>{title}</span>
+          {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+        </Button>
 
-function renderSection(
-  title: string,
-  sectionKey: keyof typeof open,
-  isOpen: boolean,
-  items: Pessoa[],
-  buttonText: string,
-  termoBusca: string,
-  setTermoBusca: React.Dispatch<React.SetStateAction<string>>
-) {
-  return (
-    <div className="mb-4">
-      <Button
-        className="group flex justify-between items-center px-5 h-12 bg-pink2000 text-pink100 font-semibold rounded-xl w-full cursor-pointer transition-colors duration-300 hover:bg-pink3000 hover:text-pink4000 shadow"
-        onClick={() => toggle(sectionKey)}
-      >
-        <span>{title}</span>
-        {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-      </Button>
-
-      {isOpen && (
-        <>
-        <div className="mt-2 mb-2 flex items-center justify-between gap-18">
-          
-          {sectionKey !== "usuarios" && (
-            <Button
-              className="bg-pink2000 w-170 shadow text-pink1000 px-4 py-2 rounded-md hover:bg-pink1000 hover:text-pink2000 cursor-pointer transition-colors duration-300"
-              onClick={() => handleAdicionarClick(sectionKey)}
-            >
-              {buttonText}
-            </Button>
-          )}
-          <BuscaPorNome
-            valor={termoBusca}
-            aoAlterar={setTermoBusca}
-            placeholder={`Busca por nome, email ou CPF ${title.toLowerCase()}`}
-            className="flex-grow max-w-xs
+        {isOpen && (
+          <>
+            <div className="mt-2 mb-2 flex items-center justify-between gap-18">
+              {sectionKey !== "usuarios" && (
+                <Button
+                  className="bg-pink2000 w-170 shadow text-pink1000 px-4 py-2 rounded-md hover:bg-pink1000 hover:text-pink2000 cursor-pointer transition-colors duration-300"
+                  onClick={() => handleAdicionarClick(sectionKey)}
+                >
+                  {buttonText}
+                </Button>
+              )}
+              <BuscaPorNome
+                valor={termoBusca}
+                aoAlterar={setTermoBusca}
+                placeholder={`Busca por nome, email ou CPF ${title.toLowerCase()}`}
+                className="flex-grow max-w-xs
             "
-          />
-
-        </div>
-        <div className="overflow-x-auto whitespace-nowrap overflow-y-auto max-h-64">
-
-          <ul className="bg-pink1000 border border-pink1000 rounded-md shadow p-4 ">
-            {items.map((item) => (
-              <li key={item.id} className="mb-4">
-                <div className="w-full h-px bg-pink3000 my-2" />
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-medium">{item.nome}</p>
-                    <p className="text-sm text-pink200">EMAIL: {item.email}</p>
-                    <p className="text-sm text-pink200">CPF: {item.cpf}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    {(sectionKey === "profissionais" || sectionKey === "estagiarios") && (
-  <Button
-    className="bg-pink1000 text-pink2000 px-3 py-1 rounded-md shadow hover:bg-pink4000 hover:text-pink1000 transition-colors duration-300 cursor-pointer"
-    onClick={() => {
-      if (sectionKey === "profissionais")
-        router.push(`/profissional-cadastro/${item.cpf}`);
-      if (sectionKey === "estagiarios")
-        router.push(`/estagiario-cadastro/${item.cpf}`);
-    }}
-  >
-    Alterar
-  </Button>
-)}
-                    <IconButton
-                      onClick={(e) =>
-                        handleDeleteClick(e, item.id, sectionKey)
-                      }
-                      className="p-1.5 bg-pink1000 text-pink4000 rounded-md cursor-pointer overflow-auto transition-colors duration-300 hover:text-red"
-                    >
-                      <Trash2 size={20} />
-                    </IconButton>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-useEffect(() => {
-  if (mensagem) {
-    const timer = setTimeout(() => {
-      setMensagem(null);
-      setTipoMensagem(null);
-    }, 4000); // desaparece em 4s
-    return () => clearTimeout(timer);
+              />
+            </div>
+            <div className="overflow-x-auto whitespace-nowrap overflow-y-auto max-h-64">
+              <ul className="bg-pink1000 border border-pink1000 rounded-md shadow p-4 ">
+                {items.map((item) => (
+                  <li key={item.id} className="mb-4">
+                    <div className="w-full h-px bg-pink3000 my-2" />
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="font-medium">{item.nome}</p>
+                        <p className="text-sm text-pink200">
+                          EMAIL: {item.email}
+                        </p>
+                        <p className="text-sm text-pink200">CPF: {item.cpf}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        {(sectionKey === "profissionais" ||
+                          sectionKey === "estagiarios") && (
+                          <Button
+                            className="bg-pink1000 text-pink2000 px-3 py-1 rounded-md shadow hover:bg-pink4000 hover:text-pink1000 transition-colors duration-300 cursor-pointer"
+                            onClick={() => {
+                              if (sectionKey === "profissionais")
+                                router.push(
+                                  `/profissional-cadastro/${item.cpf}`
+                                );
+                              if (sectionKey === "estagiarios")
+                                router.push(`/estagiario-cadastro/${item.cpf}`);
+                            }}
+                          >
+                            Alterar
+                          </Button>
+                        )}
+                        <IconButton
+                          onClick={(e) => {
+                            if (item.id === undefined || item.id === null) {
+                              console.warn(
+                                "ID indefinido para exclusão:",
+                                item
+                              );
+                              alert(
+                                "Erro: não foi possível deletar este item porque o ID está indefinido."
+                              );
+                              return;
+                            }
+                            handleDeleteClick(e, item.id, sectionKey);
+                          }}
+                          className="p-1.5 bg-pink1000 text-pink4000 rounded-md cursor-pointer overflow-auto transition-colors duration-300 hover:text-red"
+                        >
+                          <Trash2 size={20} />
+                        </IconButton>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </>
+        )}
+      </div>
+    );
   }
-}, [mensagem]);
 
-  
+  useEffect(() => {
+    if (mensagem) {
+      const timer = setTimeout(() => {
+        setMensagem(null);
+        setTipoMensagem(null);
+      }, 4000); // desaparece em 4s
+      return () => clearTimeout(timer);
+    }
+  }, [mensagem]);
+
   return (
     <>
       <div className="bg-pink2000 w-full h-20 fixed top-0 left-0 flex items-center px-4 z-50">
         <div className="flex items-center gap-2">
-          <IconButton className="bg-pink2000 text-pink1000 p-2 rounded-md hover:text-pink4000 hover:bg-pink2000 cursor-pointer"
-          onClick={() => router.replace('/')}
+          <IconButton
+            className="bg-pink2000 text-pink1000 p-2 rounded-md hover:text-pink4000 hover:bg-pink2000 cursor-pointer"
+            onClick={() => router.replace("/")}
           >
             <ArrowLeft />
           </IconButton>
@@ -254,47 +270,46 @@ useEffect(() => {
             Painel de Usuários
           </h1>
         </div>
-{mensagem && (
-  <div
-    className={`p-3 rounded-md mb-4 text-sm shadow-md ${
-      tipoMensagem === "sucesso"
-        ? "bg-green-100 text-green-800"
-        : "bg-red-100 text-red-800"
-    }`}
-  >
-    {mensagem}
-  </div>
-)}
+        {mensagem && (
+          <div
+            className={`p-3 rounded-md mb-4 text-sm shadow-md ${
+              tipoMensagem === "sucesso"
+                ? "bg-green-100 text-green-800"
+                : "bg-red-100 text-red-800"
+            }`}
+          >
+            {mensagem}
+          </div>
+        )}
         {renderSection(
-  "Usuários",
-  "usuarios",
-  open.usuarios,
-  filtrarPessoas(usuarios, buscaUsuarios),
-  "Adicionar Usuário",
-  buscaUsuarios,
-  setBuscaUsuarios
-)}
+          "Usuários",
+          "usuarios",
+          open.usuarios,
+          filtrarPessoas(usuarios, buscaUsuarios),
+          "Adicionar Usuário",
+          buscaUsuarios,
+          setBuscaUsuarios
+        )}
 
-{renderSection(
-  "Profissionais",
-  "profissionais",
-  open.profissionais,
-  filtrarPessoas(profissionais, buscaProfissionais),
-  "Adicionar Profissional",
-  buscaProfissionais,
-  setBuscaProfissionais
-)}
+        {renderSection(
+          "Profissionais",
+          "profissionais",
+          open.profissionais,
+          filtrarPessoas(profissionais, buscaProfissionais),
+          "Adicionar Profissional",
+          buscaProfissionais,
+          setBuscaProfissionais
+        )}
 
-{renderSection(
-  "Estagiários",
-  "estagiarios",
-  open.estagiarios,
-  filtrarPessoas(estagiarios, buscaEstagiarios),
-  "Adicionar Estagiário",
-  buscaEstagiarios,
-  setBuscaEstagiarios
-)}
-
+        {renderSection(
+          "Estagiários",
+          "estagiarios",
+          open.estagiarios,
+          filtrarPessoas(estagiarios, buscaEstagiarios),
+          "Adicionar Estagiário",
+          buscaEstagiarios,
+          setBuscaEstagiarios
+        )}
       </div>
 
       {isExit && (
