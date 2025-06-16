@@ -16,7 +16,7 @@ type Agendamento = {
   local: string;
   status: "realizado" | "confirmado" | "cancelado";
   dia: string;
-  usuario: string;
+  usuario_nome: string;
 };
 
 export default function Consultas() {
@@ -157,7 +157,7 @@ const cancelarAgendamento = async (id: number) => {
                       <tr key={consulta.id}>
                         <td className="p-2">{consulta.dia}</td>
                         <td className="p-2">{consulta.horario}</td>
-                        <td className="p-2">{consulta.usuario}</td>
+                        <td className="p-2">{consulta.usuario_nome}</td>
                         <td className="p-2">{consulta.servico}</td>
                         <td className="p-2">{consulta.local}</td>
                         <td className="p-2">{consulta.sala}</td>

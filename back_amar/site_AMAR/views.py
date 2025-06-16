@@ -16,8 +16,16 @@ from datetime import datetime
 from .models import Agendamento, ForumCurtida
 from django.db.models import Count
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework import generics
+from .models import Agendamento, Profissional, Estagiario
+from .serializers import AgendamentoSerializer
+from django.utils import timezone
+from .models import Agendamento, Forums
+from .serializers import ForumsSerializer
+from datetime import date
+from rest_framework.decorators import api_view, permission_classes
+from django.utils.timezone import now
 
-#from .utils import get_tipo_usuario #PARA O MENU
 from .models import (
     Agendamento,
     Usuario,
@@ -66,13 +74,6 @@ class CadastroView(APIView):
 
 # View para pré-cadastro de funcionários (profissional ou estagiário)
 # Também cadastra suas disponibilidades para atendimento
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.utils.dateparse import parse_date
-from django.contrib.contenttypes.models import ContentType
-from rest_framework.permissions import AllowAny
-
 class PreCadastroFuncionarioView(APIView):
     permission_classes = [AllowAny]
 

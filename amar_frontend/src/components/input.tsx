@@ -27,6 +27,6 @@ export function InputIcon({ ...props }: InputIconProps) {
 
 interface InputFieldProps extends ComponentProps<'input'> {}
 
-export function InputField({ ...props }: InputFieldProps) {
+export function InputField({ required,...props }: InputFieldProps) {
   return <input className="flex-1 outline-0 text-pink4000" {...props} />
 }

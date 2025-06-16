@@ -7,6 +7,8 @@ import { MaskedInputField } from "@/components/mask";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   ArrowLeft,
+  Eye,
+  EyeOff,
   FileText,
   Fingerprint,
   Lock,
@@ -42,7 +44,8 @@ export default function Cadastro() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
   const {
     register,
     handleSubmit,
@@ -54,6 +57,7 @@ export default function Cadastro() {
   async function onSubmit(data: CadastroSchema) {
     setIsLoading(true);
     try {
+      console.log("Dados enviados:", data);
       const response = await fetch("http://127.0.0.1:8000/api/cadastro/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -109,7 +113,8 @@ export default function Cadastro() {
           <h1 className="text-xl font-bold text-blue1000">Crie sua Conta</h1>
         </div>
 
-        <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+<form noValidate className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+
           <div className="space-y-4 mb-0">
             {/* Nome */}
             <InputRoot error={!!errors.nome}>
@@ -177,10 +182,21 @@ export default function Cadastro() {
                 <Lock />
               </InputIcon>
               <InputField
-                type="password"
+                type={showConfirmPassword ? "text" : "password"}
                 placeholder="Senha"
                 {...register("senha")}
               />
+                              <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="text-pink4000 hover:text-pink2000 transition"
+                >
+                  {showConfirmPassword ? (
+                    <Eye size={16} />
+                  ) : (
+                    <EyeOff size={16} />
+                  )}
+                </button>
             </InputRoot>
             {errors.senha && (
               <p className="mt-1 text-red text-xs">{errors.senha.message}</p>
@@ -192,10 +208,21 @@ export default function Cadastro() {
                 <Lock />
               </InputIcon>
               <InputField
-                type="password"
+                type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirme sua senha"
                 {...register("confirmarSenha")}
               />
+                              <button
+                                type="button"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                className="text-pink4000 hover:text-pink2000 transition"
+                              >
+                                {showConfirmPassword ? (
+                                  <Eye size={16} />
+                                ) : (
+                                  <EyeOff size={16} />
+                                )}
+                              </button>
             </InputRoot>
             {errors.confirmarSenha && (
               <p className="mt-1 text-red text-sm">

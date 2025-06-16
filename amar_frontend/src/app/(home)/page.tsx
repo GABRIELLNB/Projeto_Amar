@@ -82,13 +82,13 @@ export default function Home() {
             
       if (json.is_superuser) {
         console.log("Redirecionando para /menu-adm");
-        router.replace("/menu-adm");
+        router.push("/menu-adm");
       } else if (json.user_type === "profissional" || json.user_type === "estagiario") {
         console.log("Redirecionando para /menu");
-        router.replace("/menu");
+        router.push("/menu");
       } else {
         console.log("Redirecionando para /menu");
-        router.replace("/menu");
+        router.push("/menu");
       }
     } catch (error) {
     console.error("Falha no login:", error);

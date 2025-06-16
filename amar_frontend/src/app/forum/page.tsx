@@ -339,7 +339,7 @@ export default function Forum() {
                   <Button
                     key={forum.id}
                     onClick={() => setSelectedForum(forum)}
-                    className="relative group rounded-br-none flex justify-between cursor-pointer rounded-2xl border border-pink1000 items-start px-6 pt-4 pb-8 bg-pink1000 text-pink2000 font-semibold w-full"
+                    className="relative group rounded-br-none flex justify-between cursor-pointer shadow transition-colors duration-300 hover:border-pink2000 rounded-2xl border border-pink1000 items-start px-6 pt-4 pb-8 bg-pink1000 text-pink2000 font-semibold w-full "
                   >
                     <span className="text-left">
                       <div className="flex items-center gap-2 mb-2">
@@ -531,7 +531,7 @@ export default function Forum() {
                 {selectedForum?.nome}
               </h1>
             </div>
-di
+
             {/* Área do chat rolável */}
             <div
               className="chat-container overflow-y-auto p-4 pt-20" // <-- 64 px = altura da barra
@@ -599,7 +599,7 @@ di
             </div>
 
             {/* Input de mensagem */}
-            <div className="p-4 border-t border-pink2000 max-w-xl mx-auto mb-3">
+            <div className="p-4 border-t border-pink1000 max-w-xl mx-auto mb-3">
               <ChatInput
                 forumId={selectedForum?.id ?? 0}
                 inicialmenteGostei={

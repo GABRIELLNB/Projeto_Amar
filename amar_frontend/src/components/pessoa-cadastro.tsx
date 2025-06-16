@@ -144,9 +144,9 @@ const addHorario = (index: number) => {
         .then((data) => {
           setFormData({
             nome: data.nome || "",
-            cpf: data.cpf || editarCpf,
+            cpf: data.cpf ? formatCPF(data.cpf) : editarCpf || "",
             matricula: data.matricula || "",
-            telefone: data.telefone || "",
+            telefone: data.telefone ? formatTelefone(data.telefone) : "",
             tipo_servico: data.tipo_servico || "",
             local: data.local || "",
             sala: data.sala || "",
@@ -245,19 +245,6 @@ const addHorario = (index: number) => {
     <InputRoot>
       <InputIcon>{fieldIcons[name]}</InputIcon>
 
-      {name === "cpf" || name === "telefone" ? (
-        <MaskedInputField
-          mask={name === "cpf" ? "000.000.000-00" : "(00) 0000-0000"}
-          guide={false}
-          id={name}
-          name={name}
-          required={required}
-          placeholder={label}
-          className="bg-transparent outline-none flex-1 text-black placeholder-pink2000"
-          value={typeof formData[name] === "string" ? formData[name] : ""}
-          onChange={handleChange}
-        />
-      ) : (
         <InputField
           id={name}
           name={name}
@@ -266,7 +253,7 @@ const addHorario = (index: number) => {
           value={typeof formData[name] === "string" ? formData[name] : ""}
           onChange={handleChange}
         />
-      )}
+      
     </InputRoot>
     {errors[name] && (
       <p className="text-red-500 text-xs mt-1">
@@ -278,7 +265,34 @@ const addHorario = (index: number) => {
   </div>
 );
 
-    const router = useRouter();
+
+  useEffect(() => {
+    if (!mensagem) return;
+
+    const timer = setTimeout(() => {
+      setMensagem(null);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [mensagem]);
+      const router = useRouter();
+
+      function formatCPF(cpf: string): string {
+        if (!cpf) return "";
+        const cleaned = cpf.replace(/\D/g, ""); // Remove tudo que não for número
+        return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+      }
+    function formatTelefone(tel: string): string {
+      if (!tel) return "";
+      const cleaned = tel.replace(/\D/g, "");
+      // Para telefones com 10 ou 11 dígitos (com DDD)
+      if (cleaned.length === 11) {
+        return cleaned.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
+      } else if (cleaned.length === 10) {
+        return cleaned.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3");
+      }
+      return tel; // Se não bater o formato, retorna original
+    }
     return (
       <>
         <div className="bg-pink2000 w-full h-20 fixed top-0 left-0 flex items-center px-4 z-50">
@@ -419,6 +433,11 @@ const addHorario = (index: number) => {
                 </Button>
               </div>
             </div>
+{mensagem && (
+  <p className="text-green-600 text-center font-semibold mt-2">
+    {mensagem}
+  </p>
+)}
 
             <Button
               type="submit"

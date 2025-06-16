@@ -285,12 +285,12 @@ export default function EditarPerfil() {
                   <InputIcon>
                     <Phone />
                   </InputIcon>
-
-                  <MaskedInputField
-                    mask="(00) 00000-0000"
-                    placeholder="Digite seu telefone"
+                  <InputField
+                    type="text"
                     value={tel}
+                    readOnly
                     onChange={(e) => setTel(e.target.value)}
+                    placeholder="Digite seu telefone"
                     required
                   />
                 </InputRoot>

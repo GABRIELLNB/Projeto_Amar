@@ -17,7 +17,7 @@ class UsuarioManager(BaseUserManager):
         user.set_password(password)
         user.save(using=self._db)
         return user
-
+    
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
@@ -26,8 +26,12 @@ class UsuarioManager(BaseUserManager):
         if not password:
             raise ValueError("Superuser deve ter uma senha")
 
-        return self.create_user(email=email, password=password, **extra_fields)
+        if 'cpf' not in extra_fields:
+            raise ValueError("Superuser deve ter CPF")
+        if 'nome' not in extra_fields:
+            raise ValueError("Superuser deve ter nome")
 
+        return self.create_user(email=email, password=password, **extra_fields)
 
 # Modelo customizado para representar os usuários do sistema
 class Usuario(AbstractBaseUser, PermissionsMixin):

@@ -46,7 +46,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
         fields = ['email', 'nome', 'cpf', 'telefone', 'senha', 'foto_perfil', 'senha_mascara', 'imagem_perfil']
-        read_only_fields = ['email', 'cpf']  # CPF e email não editáveis
+        #read_only_fields = ['email', 'cpf']  # CPF e email não editáveis
 
     def update(self, instance, validated_data):
         senha = validated_data.pop('senha', None)
@@ -68,6 +68,16 @@ class UsuarioSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.foto_perfil.url)
             return obj.foto_perfil.url
         return None
+    def create(self, validated_data):
+        senha = validated_data.pop('senha', None)
+        usuario = Usuario(**validated_data)
+        if senha:
+            usuario.set_password(senha)
+        else:
+            usuario.set_unusable_password()
+        usuario.save()
+        return usuario
+
     
     
 # Serializer para o modelo Disponibilidade, que expõe a disponibilidade
@@ -126,6 +136,8 @@ class AgendamentoSerializer(serializers.ModelSerializer):
     object_id = serializers.IntegerField()
     atendente_nome = serializers.SerializerMethodField()
     servico = serializers.SerializerMethodField()
+    usuario_nome = serializers.CharField(source='usuario.nome', read_only=True)
+
 
     class Meta:
         model = Agendamento
@@ -140,7 +152,8 @@ class AgendamentoSerializer(serializers.ModelSerializer):
             'sala',
             'status',
             'atendente_nome',
-            'servico'
+            'servico',
+            'usuario_nome'
         ]
         read_only_fields = ['status']
 
@@ -189,13 +202,6 @@ class AgendamentoSerializer(serializers.ModelSerializer):
         validated_data['status'] = 'confirmado'
         return Agendamento.objects.create(usuario=usuario, **validated_data)
 
-
-    
-'''
-class LoginSerializer(serializers.Serializer):
-    cpf = serializers.CharField()
-    senha = serializers.CharField(write_only=True)
-'''
 
 
 class ForumsSerializer(serializers.ModelSerializer):

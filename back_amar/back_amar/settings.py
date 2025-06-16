@@ -160,3 +160,9 @@ SIMPLE_JWT = {
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'  # se estiver usando Path
+
+
+AUTHENTICATION_BACKENDS = [
+    'site_AMAR.authentication.EmailBackend',  # Substitua "usuarios" pelo nome do seu app
+    'django.contrib.auth.backends.ModelBackend',
+]
