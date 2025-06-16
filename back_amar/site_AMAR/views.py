@@ -481,11 +481,28 @@ class DisponibilidadesPorDataView(APIView):
         ocupados_set = set(
             (a.content_type_id, a.object_id, a.horario) for a in agendamentos_ocupados
         )
+        
+        user = request.user
+        profissional = Profissional.objects.filter(usuario=user).first()
+        estagiario = Estagiario.objects.filter(usuario=user).first()
+
+        def is_mesma_pessoa(disponibilidade):
+            return (
+                (profissional and
+                 disponibilidade.content_type == ContentType.objects.get_for_model(Profissional) and
+                 disponibilidade.object_id == profissional.id)
+                or
+                (estagiario and
+                 disponibilidade.content_type == ContentType.objects.get_for_model(Estagiario) and
+                 disponibilidade.object_id == estagiario.id)
+            )
 
         disponibilidades_livres = [
             d for d in disponibilidades
             if (d.content_type_id, d.object_id, d.horario) not in ocupados_set
+            and not is_mesma_pessoa(d)
         ]
+
 
         serializer = DisponibilidadeSerializer(disponibilidades_livres, many=True)
         

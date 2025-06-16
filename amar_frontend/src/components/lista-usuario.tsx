@@ -108,7 +108,7 @@ export default function AdminUsersPanel() {
 
       // Atualiza o estado local removendo o item deletado
       if (tipo === "usuarios") {
-        setUsuarios((prev) => prev.filter((user) => user.id !== id));
+        setUsuarios((prev) => prev.filter((user) => user.id !== Number(id)));
       } else if (tipo === "profissionais") {
         setProfissionais((prev) => prev.filter((user) => user.id !== id));
       } else if (tipo === "estagiarios") {
